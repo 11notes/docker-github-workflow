@@ -1,7 +1,7 @@
 # :: Image
-  ARG ARCH=
   FROM scratch
-  ENV APP_VERSION=3.21.0
+  ARG ARCH=
+  ARG APP_VERSION=
   ADD alpine-minirootfs-${APP_VERSION}-${ARCH}.tar.gz /
 
 # :: Run
