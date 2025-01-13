@@ -1,8 +1,8 @@
 # :: Image
   FROM scratch
-  ARG ARCH=
-  ARG APP_VERSION=
-  ADD alpine-minirootfs-${APP_VERSION}-${ARCH}.tar.gz /
+  ARG TARGETARCH
+  ARG APP_VERSION
+  ADD alpine-minirootfs-${APP_VERSION}-${TARGETARCH}.tar.gz /
 
 # :: Run
   USER root
