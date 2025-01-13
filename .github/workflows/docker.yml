@@ -16,10 +16,7 @@ jobs:
       contents: read
       packages: write
 
-    steps:
-      - name: create release notes
-        run: if wget -q -O ./RELEASE.md https://raw.githubusercontent.com/${{ github.repository }}/refs/heads/master/RELEASE.md; then gh release create "$tag" --repo="${{ github.repository }}" --title="${tag#}" -F ./RELEASE.md; fi     
-
+    steps:   
       - name: checkout
         uses: actions/checkout@v4
 
@@ -68,3 +65,6 @@ jobs:
             ${{ env.json_image }}:stable
             ghcr.io/${{ env.json_image }}:${{ env.json_version }}
             ghcr.io/${{ env.json_image }}:stable
+
+      - name: create release notes
+        run: if wget -q -O ./RELEASE.md https://raw.githubusercontent.com/${{ github.repository }}/refs/heads/master/RELEASE.md; then gh release create "$tag" --repo="${{ github.repository }}" --title="${tag#}" -F ./RELEASE.md; fi
