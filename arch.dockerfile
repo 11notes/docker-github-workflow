@@ -1,8 +1,3 @@
-# :: Args
-  ARG TARGETARCH
-  ARG APP_VERSION
-  ARG APP_NAME
-
 # :: Util
   FROM alpine as util
 
@@ -34,15 +29,24 @@
     make -j$(nproc); \
     make install;  
 
-# :: Image
+# :: Header
   FROM scratch
-  ADD alpine-minirootfs-${APP_VERSION}-${TARGETARCH}.tar.gz /
-  COPY --from=util /docker-util/src /usr/local/bin
-  COPY --from=mimalloc /mimalloc/build/*.so.* /lib/
-  ENV APP_VERSION=${APP_VERSION}
-  ENV APP_NAME=${APP_NAME}
-  ENV LD_PRELOAD=/lib/libmimalloc.so
-  ENV MIMALLOC_LARGE_OS_PAGES=1
+
+  # :: arguments
+    ARG TARGETARCH
+    ARG APP_VERSION
+    ARG APP_NAME
+
+  # :: environment
+    ENV APP_VERSION=${APP_VERSION}
+    ENV APP_NAME=${APP_NAME}
+    ENV LD_PRELOAD=/lib/libmimalloc.so
+    ENV MIMALLOC_LARGE_OS_PAGES=1
+
+  # :: multi-stage
+    ADD alpine-minirootfs-${APP_VERSION}-${TARGETARCH}.tar.gz /
+    COPY --from=util /docker-util/src /usr/local/bin
+    COPY --from=mimalloc /mimalloc/build/*.so.* /lib/
 
 # :: Run
   USER root
