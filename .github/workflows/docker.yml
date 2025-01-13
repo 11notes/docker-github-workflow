@@ -17,8 +17,7 @@ jobs:
       packages: write
 
     steps:   
-      - name: checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: .json to env
         uses: rgarcia-phi/json-to-variables@v1.1.0
@@ -67,4 +66,11 @@ jobs:
             ghcr.io/${{ env.json_image }}:stable
 
       - name: create release notes
-        run: if wget -q -O ./RELEASE.md https://raw.githubusercontent.com/${{ github.repository }}/refs/heads/master/RELEASE.md; then gh release create "$tag" --repo="${{ github.repository }}" --title="${tag#}" -F ./RELEASE.md; fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >
+          gh release create
+          -d
+          -F RELEASE.md
+          -t "${{ github.ref_name }}"
+          ${GITHUB_REF#refs/*/}
