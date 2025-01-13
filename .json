@@ -1,0 +1,6 @@
+{
+  "image":"alpine",
+  "version":"3.21.0",
+  "parent":"scratch",
+  "home":"/"
+}
