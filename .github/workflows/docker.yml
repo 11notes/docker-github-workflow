@@ -6,6 +6,9 @@ on:
     tags:
       - 'v*'
 
+env:
+  IMAGE_ARCH: "linux/amd64,linux/arm64"
+
 jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
@@ -14,6 +17,9 @@ jobs:
       packages: write
 
     steps:
+      - name: create release notes
+        run: if wget -q -O ./RELEASE.md https://raw.githubusercontent.com/${{ github.repository }}/refs/heads/master/RELEASE.md; then gh release create "$tag" --repo="${{ github.repository }}" --title="${tag#}" -F ./RELEASE.md; fi     
+
       - name: checkout
         uses: actions/checkout@v4
 
@@ -49,10 +55,14 @@ jobs:
           push: true
           sbom: true
           provenance: mode=max
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ env.IMAGE_ARCH }}
+          cache-from: type=registry,ref=${{ env.json_image }}:buildcache
+          cache-to: type=registry,ref=${{ env.json_image }}:buildcache,mode=max,compression=zstd,force-compression=true
           build-args: |
+            APP_IMAGE=${{ env.json_image }}
             APP_NAME=${{ env.json_name }}
             APP_VERSION=${{ env.json_version }}
+            APP_HOME=${{ env.json_home }}
           tags: |
             ${{ env.json_image }}:${{ env.json_version }}
             ${{ env.json_image }}:stable

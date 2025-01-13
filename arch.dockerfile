@@ -34,12 +34,17 @@
 
   # :: arguments
     ARG TARGETARCH
-    ARG APP_VERSION
+    ARG APP_IMAGE
     ARG APP_NAME
+    ARG APP_VERSION
+    ARG APP_ROOT
 
   # :: environment
-    ENV APP_VERSION=${APP_VERSION}
+    ENV APP_IMAGE=${APP_IMAGE}
     ENV APP_NAME=${APP_NAME}
+    ENV APP_VERSION=${APP_VERSION}
+    ENV APP_ROOT=${APP_ROOT}
+
     ENV LD_PRELOAD=/lib/libmimalloc.so
     ENV MIMALLOC_LARGE_OS_PAGES=1
 
@@ -64,13 +69,14 @@
   # :: create user
     RUN set -ex; \
       addgroup --gid 1000 -S docker; \
-      adduser --uid 1000 -D -S -h / -s /sbin/nologin -G docker docker;
+      adduser --uid 1000 -D -S -h ${APP_ROOT} -s /sbin/nologin -G docker docker;
 
   # :: copy root filesystem changes and set correct permissions
     COPY ./rootfs /
     RUN set -ex; \
       chmod +x -R /usr/local/bin; \
-      chown -R 1000:1000 /usr/local/bin;
+      chown -R 1000:1000 \
+        /usr/local/bin;
 
 # :: Start
   USER docker
