@@ -1,5 +1,5 @@
 # :: Util
-  FROM alpine as util
+  FROM alpine AS util
 
   RUN set -ex; \
     apk add --no-cache \
@@ -7,8 +7,8 @@
     git clone -b stable https://github.com/11notes/docker-util.git;
 
 # :: Build / mimalloc
-  FROM alpine as mimalloc
-  ARG MIMALLOC_VERSION=v2.1.7
+  FROM alpine AS mimalloc
+  ARG VERSION=v2.1.7
 
   RUN set -ex; \
     apk add --no-cache \
@@ -21,7 +21,7 @@
       cmake \
       g++ \
       git; \
-    git clone https://github.com/microsoft/mimalloc.git -b ${MIMALLOC_VERSION}; \
+    git clone https://github.com/microsoft/mimalloc.git -b ${VERSION}; \
     cd /mimalloc; \
     mkdir build; \
     cd build; \
