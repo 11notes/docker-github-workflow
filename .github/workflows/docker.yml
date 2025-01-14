@@ -73,7 +73,7 @@ jobs:
       - name: update description
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh repo edit --description="${{ env.json_description }}"
+        run: gh repo edit ${{ github.repository }} --description="${{ env.json_description }}"
 
       - name: push README.md to docker hub
         uses: christian-korneck/update-container-description-action@v1
