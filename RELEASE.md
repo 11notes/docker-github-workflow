@@ -1,2 +1,2 @@
-### 🚀 Updates
-* bump Alpine to 3.21.2
+### 🪄 Features
+* use description from .json and updaet github repository description
