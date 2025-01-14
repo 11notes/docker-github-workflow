@@ -1,2 +1,2 @@
-### 🚀 Features
-* add description to .json and update README.md on docker hub
+### 🚀 Updates
+* bump Alpine to 3.21.2
