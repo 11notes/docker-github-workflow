@@ -1,2 +1,2 @@
 ### 🪄 Features
-* use description from .json and updaet github repository description
+* use description from .json and update github repository description
