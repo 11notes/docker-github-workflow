@@ -71,17 +71,13 @@ jobs:
         run: gh release create ${{ github.ref_name }} -F RELEASE.md
 
       - name: update description
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-          GH_DESCRIPTION: ${{ env.json_description }}
-        run: >
-          curl \
-            -X PATCH \
-            -H "Accept: application/vnd.github+json" \ 
-            -H "Authorization: token ${GH_TOKEN}" \
-            --data '{"name":"${GH_REPO}", "description":"${GH_DESCRIPTION}"}' \
-            https://api.github.com/repos/${GH_REPO}
+        run: |
+          curl --request PATCH \
+            --url https://api.github.com/repos/${{ github.repository }} \
+            --header 'authorization: Bearer ${{ secrets.REPO_TOKEN }}' \
+            --header 'content-type: application/json' \
+            --data '{"description": "${{ env.json_description }}"}' \
+            --fail
 
       - name: push README.md to docker hub
         uses: christian-korneck/update-container-description-action@v1
