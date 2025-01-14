@@ -3,5 +3,6 @@
   "name":"alpine",
   "version":"3.21.0",
   "parent":"scratch",
-  "root":"/"
+  "root":"/",
+  "description":"Alpine Linux with mimalloc for fastest multi-threaded memory allocation"
 }

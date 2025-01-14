@@ -69,3 +69,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh release create ${{ github.ref_name }} -F RELEASE.md
+
+      - name: push README.md to docker hub
+        uses: christian-korneck/update-container-description-action@v1
+        env:
+          DOCKER_USER: ${{ secrets.DOCKER_HUB_USERNAME }}
+          DOCKER_PASS: ${{ secrets.DOCKER_HUB_TOKEN }}
+        with:
+          destination_container_repo: ${{ env.json_image }}
+          provider: dockerhub
+          short_description: ${{ env.json_description }}
+          readme_file: 'README.md'

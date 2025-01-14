@@ -26,8 +26,7 @@
     mkdir build; \
     cd build; \
     cmake ..; \
-    make -j$(nproc); \
-    make install;  
+    make -j$(nproc);
 
 # :: Header
   FROM scratch
@@ -45,13 +44,13 @@
     ENV APP_VERSION=${APP_VERSION}
     ENV APP_ROOT=${APP_ROOT}
 
-    ENV LD_PRELOAD=/lib/libmimalloc.so
+    ENV LD_PRELOAD=/usr/lib/libmimalloc.so
     ENV MIMALLOC_LARGE_OS_PAGES=1
 
   # :: multi-stage
     ADD alpine-minirootfs-${APP_VERSION}-${TARGETARCH}.tar.gz /
     COPY --from=util /docker-util/src /usr/local/bin
-    COPY --from=mimalloc /mimalloc/build/*.so.* /lib/
+    COPY --from=mimalloc /mimalloc/build/libmimalloc.so /usr/lib/
 
 # :: Run
   USER root
@@ -71,7 +70,7 @@
       addgroup --gid 1000 -S docker; \
       adduser --uid 1000 -D -S -h ${APP_ROOT} -s /sbin/nologin -G docker docker;
 
-  # :: copy root filesystem changes and set correct permissions
+  # :: copy filesystem changes and set correct permissions
     COPY ./rootfs /
     RUN set -ex; \
       chmod +x -R /usr/local/bin; \
