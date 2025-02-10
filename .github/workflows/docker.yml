@@ -30,8 +30,7 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         run: |
           echo "${{ toJSON(github.event.inputs) }}" > .json
-          cat .json | jq 'keys[]'
-          for KEY in $(cat .json | jq 'keys[]' | tr '\n' ' '); do echo "input_$(echo ${KEY} | tr '[:lower:]' '[:upper:]')=$(cat .json | jq '.'${KEY}'')" >> $GITHUB_ENV; done
+          cat .json
 
       - name: init / .json to env
         uses: rgarcia-phi/json-to-variables@9835d537368468c4e4de5254dc3efeadda183793
