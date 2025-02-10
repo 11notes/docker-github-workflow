@@ -1,0 +1,6 @@
+services:
+  alpine:
+    container_name: "alpine"
+    environment:
+      TZ: Europe/Zurich
+    restart: always
