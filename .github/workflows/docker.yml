@@ -32,9 +32,7 @@ jobs:
           cat << 'EOF' > .json
           ${{ toJSON(github.event.inputs) }}
           EOF
-          echo ".json is:"
-          cat .json
-          for KEY in $(cat .json | jq 'keys[]' | tr '\n' ' '); do echo "input_$(echo ${KEY} | tr '[:lower:]' '[:upper:]')=$(cat .json | jq '.'${KEY}'')" >> $GITHUB_ENV; done
+          for KEY in $(cat .json | jq 'keys[]' | tr '\n' ' '); do echo "input_$(echo ${KEY} | sed 's/\"//' | tr '[:lower:]' '[:upper:]')=$(cat .json | jq '.'${KEY}'')" >> $GITHUB_ENV; done
 
       - name: init / .json to env
         uses: rgarcia-phi/json-to-variables@9835d537368468c4e4de5254dc3efeadda183793
