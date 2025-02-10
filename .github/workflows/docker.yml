@@ -41,7 +41,7 @@ jobs:
           cat << 'EOF' > .inputs
           ${{ toJSON(github.event.inputs) }}
           EOF
-          for KEY in $(cat .inputs | jq 'keys[]' | tr '\n' ' '); do echo "input_$(echo ${KEY} | sed 's/\"//g' | tr '[:upper:]' '[:lower:]')=$(cat .inputs | jq '.'${KEY}'')" >> $GITHUB_ENV; done
+          for KEY in $(cat .inputs | jq --raw-output 'keys[]' | tr '\n' ' '); do echo "input_$(echo ${KEY} | tr '[:upper:]' '[:lower:]')=$(cat .inputs | jq --raw-output '.'${KEY}'')" >> $GITHUB_ENV; done
 
       - name: init / .json to env
         uses: rgarcia-phi/json-to-variables@9835d537368468c4e4de5254dc3efeadda183793
@@ -72,8 +72,8 @@ jobs:
           echo "IMAGE_TAGS=${LOCAL_TAGS}" >> $GITHUB_ENV
 
           : # if for whatever reason UID/GID must be changed at build time
-          echo "IMAGE_UID=${json_uid:-1000}" >> $GITHUB_ENV
-          echo "IMAGE_GID=${json_gid:-1000}" >> $GITHUB_ENV
+          if [ ! -z ${input_uid} ]; then echo "IMAGE_UID=${input_uid}" >> $GITHUB_ENV; else echo "IMAGE_UID=${json_uid:-1000}" >> $GITHUB_ENV; fi
+          if [ ! -z ${input_gid} ]; then echo "IMAGE_GID=${input_gid}" >> $GITHUB_ENV; else echo "IMAGE_GID=${json_gid:-1000}" >> $GITHUB_ENV; fi
 
       - name: docker / login to hub
         uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
