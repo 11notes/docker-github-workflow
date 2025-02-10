@@ -30,7 +30,8 @@ jobs:
         id: inputs
         if: github.event_name == 'workflow_dispatch'
         run: |
-          echo "json=${{ toJSON(github.event.inputs) }}" >> $GITHUB_OUTPUT
+          JSON=$(echo "${{ toJSON(github.event.inputs) }}" )
+          echo "json=$(echo ${JSON} | yq)" >> $GITHUB_OUTPUT
 
       - name: init / inputs to env
         uses: rgarcia-phi/json-to-variables@9835d537368468c4e4de5254dc3efeadda183793
