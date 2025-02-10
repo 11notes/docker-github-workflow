@@ -19,6 +19,10 @@ on:
         description: 'prefix for semver tags'
         required: false
         default: ''
+      dispatch:
+        description: 'run dispatch'
+        required: false
+        default: 'true'
   push:
     tags:
       - 'v*'
@@ -54,6 +58,7 @@ jobs:
           echo "IMAGE_ARCH=${json_arch:-linux/amd64,linux/arm64}" >> $GITHUB_ENV
           echo "WORKFLOW_GRYPE_SEVERITY_CUTOFF=${json_grype_severity:-high}" >> $GITHUB_ENV;
           echo "WORKFLOW_GITHUB_RELEASE=${input_release:-true}" >> $GITHUB_ENV;
+          echo "WORKFLOW_DISPATCH=${input_dispatch:-true}" >> $GITHUB_ENV;
 
           : # create tags for semver, stable and other shenanigans
           LOCAL_SHA=$(git rev-parse --short HEAD)
@@ -190,7 +195,7 @@ jobs:
           readme_file: 'README.md'
 
       - name: github / dispatch workflow
-        if: env.json_dispatch_workflow != null
+        if: env.WORKFLOW_DISPATCH == 'true' && env.json_dispatch_workflow != null
         uses: benc-uk/workflow-dispatch@e2e5e9a103e331dad343f381a29e654aea3cf8fc
         with:
           workflow: ${{ env.json_dispatch_workflow }}
