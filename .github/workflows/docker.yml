@@ -26,13 +26,13 @@ jobs:
       - name: init / checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
-      - name: init / inputs
+      - name: init / inputs to env
         if: github.event_name == 'workflow_dispatch'
         run: |
-          cat << 'EOF' > .json
+          cat << 'EOF' > .inputs
           ${{ toJSON(github.event.inputs) }}
           EOF
-          for KEY in $(cat .json | jq 'keys[]' | tr '\n' ' '); do echo "input_$(echo ${KEY} | sed 's/\"//' | tr '[:lower:]' '[:upper:]')=$(cat .json | jq '.'${KEY}'')" >> $GITHUB_ENV; done
+          for KEY in $(cat .inputs | jq 'keys[]' | tr '\n' ' '); do echo "input_$(echo ${KEY} | sed 's/\"//g' | tr '[:upper:]' '[:lower:]')=$(cat .inputs | jq '.'${KEY}'')" >> $GITHUB_ENV; done
 
       - name: init / .json to env
         uses: rgarcia-phi/json-to-variables@9835d537368468c4e4de5254dc3efeadda183793
