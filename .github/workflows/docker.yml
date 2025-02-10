@@ -7,12 +7,21 @@ on:
         description: 'set WORKFLOW_GITHUB_RELEASE'
         required: true
         default: 'true'
+      uid:
+        description: 'set IMAGE_UID'
+        required: false
+        default: '1000'
+      gid:
+        description: 'set IMAGE_GID'
+        required: false
+        default: '1000'
+      semverprefix:
+        description: 'prefix for semver tags'
+        required: false
+        default: ''
   push:
     tags:
       - 'v*'
-
-env:
-  WORKFLOW_GITHUB_RELEASE: true
 
 jobs:
   build-and-push-image:
@@ -44,16 +53,19 @@ jobs:
           : # set defaults
           echo "IMAGE_ARCH=${json_arch:-linux/amd64,linux/arm64}" >> $GITHUB_ENV
           echo "WORKFLOW_GRYPE_SEVERITY_CUTOFF=${json_grype_severity:-high}" >> $GITHUB_ENV;
+          echo "WORKFLOW_GITHUB_RELEASE=${input_release:-true}" >> $GITHUB_ENV;
 
           : # create tags for semver, stable and other shenanigans
-          export LOCAL_SHA=$(git rev-parse --short HEAD)
-          export LOCAL_SEMVER_MAJOR=$(awk -F. '{ print $1 }' <<< ${json_version})
-          export LOCAL_SEMVER_MINOR=$(awk -F. '{ print $2 }' <<< ${json_version})
-          export LOCAL_SEMVER_PATCH=$(awk -F. '{ print $3 }' <<< ${json_version})
-          export LOCAL_TAGS="${json_image}:${LOCAL_SHA}"
-          if [ ! -z ${LOCAL_SEMVER_MAJOR} ]; then LOCAL_TAGS="${LOCAL_TAGS},${json_image}:${LOCAL_SEMVER_MAJOR}"; fi
-          if [ ! -z ${LOCAL_SEMVER_MINOR} ]; then LOCAL_TAGS="${LOCAL_TAGS},${json_image}:${LOCAL_SEMVER_MAJOR}.${LOCAL_SEMVER_MINOR}"; fi
-          if [ ! -z ${LOCAL_SEMVER_PATCH} ]; then LOCAL_TAGS="${LOCAL_TAGS},${json_image}:${LOCAL_SEMVER_MAJOR}.${LOCAL_SEMVER_MINOR}.${LOCAL_SEMVER_PATCH}"; fi
+          LOCAL_SHA=$(git rev-parse --short HEAD)
+          LOCAL_SEMVER_MAJOR=$(awk -F. '{ print $1 }' <<< ${json_version})
+          LOCAL_SEMVER_MINOR=$(awk -F. '{ print $2 }' <<< ${json_version})
+          LOCAL_SEMVER_PATCH=$(awk -F. '{ print $3 }' <<< ${json_version})
+          LOCAL_SEMVER_PREFIX=""
+          LOCAL_TAGS="${json_image}:${LOCAL_SHA}"
+          if [ ! -z ${input_semverprefix} ]; then LOCAL_SEMVER_PREFIX="${input_semverprefix}-"; fi
+          if [ ! -z ${LOCAL_SEMVER_MAJOR} ]; then LOCAL_TAGS="${LOCAL_TAGS},${json_image}:${LOCAL_SEMVER_PREFIX}${LOCAL_SEMVER_MAJOR}"; fi
+          if [ ! -z ${LOCAL_SEMVER_MINOR} ]; then LOCAL_TAGS="${LOCAL_TAGS},${json_image}:${LOCAL_SEMVER_PREFIX}${LOCAL_SEMVER_MAJOR}.${LOCAL_SEMVER_MINOR}"; fi
+          if [ ! -z ${LOCAL_SEMVER_PATCH} ]; then LOCAL_TAGS="${LOCAL_TAGS},${json_image}:${LOCAL_SEMVER_PREFIX}${LOCAL_SEMVER_MAJOR}.${LOCAL_SEMVER_MINOR}.${LOCAL_SEMVER_PATCH}"; fi
           if echo "${LOCAL_TAGS}" | grep -q "${json_stable}" ; then LOCAL_TAGS="${LOCAL_TAGS},${json_image}:stable"; fi
           if echo "${LOCAL_TAGS}" | grep -q "${json_latest}" ; then LOCAL_TAGS="${LOCAL_TAGS},${json_image}:latest"; fi
           if [ ! -z ${json_tags} ]; then SPECIAL_LOCAL_TAGS=$(echo ${json_tags} | sed 's/,/ /g'); for LOCAL_TAG in ${json_tags}; do LOCAL_TAGS="${LOCAL_TAGS},${json_image}:${LOCAL_TAG}"; done; fi
@@ -62,11 +74,6 @@ jobs:
           : # if for whatever reason UID/GID must be changed at build time
           echo "IMAGE_UID=${json_uid:-1000}" >> $GITHUB_ENV
           echo "IMAGE_GID=${json_gid:-1000}" >> $GITHUB_ENV
-
-      - name: github / set workflow release
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          echo "WORKFLOW_GITHUB_RELEASE=${{ inputs.release }}" >> $GITHUB_ENV
 
       - name: docker / login to hub
         uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
@@ -171,6 +178,7 @@ jobs:
             --fail
 
       - name: docker / push README.md to docker hub
+        if: hashFiles('README.md') != ''
         uses: christian-korneck/update-container-description-action@d36005551adeaba9698d8d67a296bd16fa91f8e8
         env:
           DOCKER_USER: 11notes
