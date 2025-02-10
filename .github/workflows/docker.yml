@@ -30,14 +30,8 @@ jobs:
         id: inputs
         if: github.event_name == 'workflow_dispatch'
         run: |
-          JSON=$(echo "${{ toJSON(github.event.inputs) }}" )
-          echo "json=$(echo ${JSON} | yq)" >> $GITHUB_OUTPUT
-
-      - name: init / inputs to env
-        uses: rgarcia-phi/json-to-variables@9835d537368468c4e4de5254dc3efeadda183793
-        with:
-          prefix: input
-          filename: ${{ steps.inputs.outputs.json }}
+          JSON=$(echo "${{ toJSON(github.event.inputs) }}")
+          for KEY in $(echo "${JSON}" | jq 'keys[]' | tr '\n' ' '); do echo "INPUT_$(echo ${KEY} | tr '[:lower:]' '[:upper:]')=$(echo "${JSON}" | jq '.'${KEY}'')" >> $GITHUB_ENV; done
 
       - name: init / .json to env
         uses: rgarcia-phi/json-to-variables@9835d537368468c4e4de5254dc3efeadda183793
