@@ -12,7 +12,7 @@ jobs:
 
       - name: create dynamic README.md
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.REPOSITORY_TOKEN }}
         run: |
           echo -e "# Foo\nHello Bar!" > README.md
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
