@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: master
       - run: |
           date > README.md
           git config user.name "github-actions[bot]"
