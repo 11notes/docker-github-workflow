@@ -21,4 +21,4 @@ jobs:
           git config user.name "github-actions[bot]"
           git add -A
           git commit -m "update README.md"
-          git push
+          git push origin HEAD:master
