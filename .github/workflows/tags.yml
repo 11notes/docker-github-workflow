@@ -4,20 +4,16 @@ on:
     tags:
       - 'v*'
 jobs:
-  docker:
+  build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: git / checkout
-        uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
-
-      - name: create dynamic README.md
-        run: |
-          echo -e "# Foo\nHello Bar!" > README.md
+      - run: |
+          date > README.md
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "update README.md"
+          git commit -m "README.md"
           git push
