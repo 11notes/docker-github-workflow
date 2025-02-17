@@ -1,8 +1,18 @@
 {
   "image":"11notes/github-workflow",
   "name":"alpine",
-  "version":"3.21.2",
-  "parent":"scratch",
   "root":"/",
-  "description":"Alpine Linux with mimalloc for fastest multi-threaded memory allocation"
+  
+  "semver":{
+    "version":"3.21.2",
+    "stable":"3.21.2",
+    "latest":"3.21.2"
+  },
+
+  "readme":{
+    "description":"github-workflow test bench",
+    "parent":{
+      "image":"scratch"
+    }
+  }
 }

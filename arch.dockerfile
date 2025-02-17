@@ -1,32 +1,8 @@
 # :: Util
-  FROM alpine AS util
+FROM 11notes/util AS util
 
-  RUN set -ex; \
-    apk add --no-cache \
-      git; \
-    git clone -b stable https://github.com/11notes/docker-util.git;
-
-# :: Build / mimalloc
-  FROM alpine AS mimalloc
-  ARG VERSION=v2.1.7
-
-  RUN set -ex; \
-    apk add --no-cache \
-      curl \
-      wget \
-      unzip \
-      build-base \
-      linux-headers \
-      make \
-      cmake \
-      g++ \
-      git; \
-    git clone https://github.com/microsoft/mimalloc.git -b ${VERSION}; \
-    cd /mimalloc; \
-    mkdir build; \
-    cd build; \
-    cmake ..; \
-    make -j$(nproc);
+# :: Mimalloc
+  FROM 11notes/mimalloc:2.1.9 AS mimalloc
 
 # :: Header
   FROM scratch
@@ -49,20 +25,22 @@
 
   # :: multi-stage
     ADD alpine-minirootfs-${APP_VERSION}-${TARGETARCH}.tar.gz /
-    COPY --from=util /docker-util/src /usr/local/bin
-    COPY --from=mimalloc /mimalloc/build/libmimalloc.so /usr/lib/
+    COPY --from=util /usr/local/bin/ /usr/local/bin
+    COPY --from=mimalloc /usr/lib/libmimalloc.so /usr/lib/
 
 # :: Run
   USER root
 
   # :: update image
+    ARG APP_NO_CACHE
     RUN set -ex; \
-      apk --no-cache --update add \
+      apk --no-cache --update --repository https://dl-cdn.alpinelinux.org/alpine/edge/main add \
         ca-certificates \
-        tini \
         curl \
-        tzdata \
-        shadow; \
+        tzdata; \
+      apk --no-cache --update --repository https://dl-cdn.alpinelinux.org/alpine/edge/community add \
+        shadow \
+        tini; \
       apk --no-cache --update upgrade;
 
   # :: create user
@@ -73,9 +51,7 @@
   # :: copy filesystem changes and set correct permissions
     COPY ./rootfs /
     RUN set -ex; \
-      chmod +x -R /usr/local/bin; \
-      chown -R 1000:1000 \
-        /usr/local/bin;
+      chmod +x -R /usr/local/bin;
 
 # :: Start
   USER docker
