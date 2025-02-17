@@ -6,10 +6,11 @@ on:
 jobs:
   docker:
     runs-on: ubuntu-latest
-    steps:   
-      - name: build docker image
-        uses: the-actions-org/workflow-dispatch@3133c5d135c7dbe4be4f9793872b6ef331b53bc7
-        with:
-          workflow: docker.yml
-          wait-for-completion: false
-          token: "${{ secrets.REPOSITORY_TOKEN }}"
+    steps:
+      - name: create dynamic README.md
+        run: |
+          echo -e "# Foo\nHello Bar!" > README.md
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git commit -am "dynamic readme"
+          git push
