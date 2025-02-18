@@ -1,6 +1,6 @@
 {
-  "image":"11notes/alpine",
-  "name":"alpine",
+  "image":"11notes/github-workflow",
+  "name":"github-workflow",
   "root":"/",
   
   "semver":{
@@ -16,6 +16,9 @@
     },
     "built":{
       "mimalloc":"https://github.com/microsoft/mimalloc"
+    },
+    "grype":{
+      "severity":0
     }
   }
 }
