@@ -76,5 +76,7 @@ USER docker
 | 4.7 (Medium) | linux-pam  | 1.6.1-r1  |   | apk  | /lib/apk/db/installed  | nvd:cpe  | [CVE-2024-10041](https://nvd.nist.gov/vuln/detail/CVE-2024-10041)  |
 
 
+
+
 # ElevenNotes™️
 This image is provided to you at your own risk. Always make backups before updating an image to a different version. Check the [releases](https://github.com/11notes/docker-github-workflow/releases) for breaking changes. If you have any problems with using this image simply raise an [issue](https://github.com/11notes/docker-github-workflow/issues), thanks. If you have a question or inputs please create a new [discussion](https://github.com/11notes/docker-github-workflow/discussions) instead of an issue. You can find all my other repositories on [github](https://github.com/11notes?tab=repositories).
