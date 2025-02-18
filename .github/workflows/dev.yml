@@ -209,7 +209,7 @@ jobs:
             --fail
 
       - name: github / create README.md
-        uses: 11notes/action-docker-readme@v1.1.0
+        uses: 11notes/action-docker-readme@v1.1.1
         with:
           sarif_file: ${{ steps.grype-scan.outputs.sarif }}
 
