@@ -141,15 +141,6 @@ jobs:
           severity-cutoff: ${{ env.WORKFLOW_GRYPE_SEVERITY_CUTOFF }}
           by-cve: true
           output-format: 'sarif'
-          output-file: ${{ runner.temp }}/_github_home/grype.sarif
-
-      - name: grype / report / sarif to markdown
-        id: sarif-to-md
-        if: success() || failure()
-        continue-on-error: true
-        uses: 11notes/action-sarif-to-markdown@bc689850bd33a1037ea1d0a609ab4ea14b3c4396
-        with:
-          sarif_file: grype.sarif
 
       - name: grype / delete tag
         if: steps.grype-tag.outcome == 'success'
@@ -218,7 +209,7 @@ jobs:
             --fail
 
       - name: github / create README.md
-        uses: 11notes/action-docker-readme@v1.0.2
+        uses: 11notes/action-docker-readme@v1.1.0
         with:
           sarif_file: ${{ steps.grype-scan.outputs.sarif }}
 
