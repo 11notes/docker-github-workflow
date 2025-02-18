@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: master
-      - uses: 11notes/action-docker-readme@v0.0.1
+      - uses: 11notes/action-docker-readme@v0.0.2
       - run: |
           date > README.md
           git config user.name "github-actions[bot]"
