@@ -68,12 +68,12 @@ USER docker
 
 # GENERAL TIPS 📌
 * Use a reverse proxy like Traefik, Nginx, HAproxy to terminate TLS and to protect your endpoints
-* Use Let’s Encrypt DNS-01 challenge to obtain valid SSL certificates for your services# SECURITY VULNERABILITIES REPORT ⚠️}
+* Use Let’s Encrypt DNS-01 challenge to obtain valid SSL certificates for your services
+
+# SECURITY VULNERABILITIES REPORT ⚡
 | Severity | Package | Version | Fix Version | Type | Location | Data Namespace | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 4.7 | linux-pam  | 1.6.1-r1  |   | apk  | /lib/apk/db/installed  | nvd:cpe  | [CVE-2024-10041](https://nvd.nist.gov/vuln/detail/CVE-2024-10041)  |
-
-
+| 4.7 (Medium) | linux-pam  | 1.6.1-r1  |   | apk  | /lib/apk/db/installed  | nvd:cpe  | [CVE-2024-10041](https://nvd.nist.gov/vuln/detail/CVE-2024-10041)  |
 
 
 # ElevenNotes™️
