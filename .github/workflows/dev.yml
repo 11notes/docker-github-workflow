@@ -65,8 +65,9 @@ jobs:
 
           : # set defaults
           echo "IMAGE_ARCH=${json_arch:-linux/amd64,linux/arm64}" >> $GITHUB_ENV
-          echo "WORKFLOW_GRYPE_SEVERITY_CUTOFF=${json_grype_severity:-high}" >> $GITHUB_ENV;
           echo "WORKFLOW_GITHUB_RELEASE=${input_release:-true}" >> $GITHUB_ENV;
+          echo "WORKFLOW_GRYPE_SCAN=${json_grype_scan:-true}" >> $GITHUB_ENV;
+          echo "WORKFLOW_GRYPE_SEVERITY_CUTOFF=${json_grype_severity:-high}" >> $GITHUB_ENV;
 
           : # create tags for semver, stable and other shenanigans
           LOCAL_SHA=$(git rev-parse --short HEAD)
@@ -92,7 +93,7 @@ jobs:
           if [ ! -z ${input_uid} ]; then echo "IMAGE_UID=${input_uid}" >> $GITHUB_ENV; else echo "IMAGE_UID=${json_uid:-1000}" >> $GITHUB_ENV; fi
           if [ ! -z ${input_gid} ]; then echo "IMAGE_GID=${input_gid}" >> $GITHUB_ENV; else echo "IMAGE_GID=${json_gid:-1000}" >> $GITHUB_ENV; fi
 
-          : # set rc, prefix or suffix globally
+          : # set rc, prefix or suffix globally for semver and version
           echo "IMAGE_SEMVER_PREFIX=${LOCAL_SEMVER_PREFIX}" >> $GITHUB_ENV
           echo "IMAGE_SEMVER_SUFFIX=${LOCAL_SEMVER_SUFFIX}" >> $GITHUB_ENV
           echo "IMAGE_VERSION_RC=${LOCAL_SEMVER_RC}" >> $GITHUB_ENV
@@ -134,6 +135,7 @@ jobs:
             ${{ env.IMAGE }}:${{ env.IMAGE_SEMVER_PREFIX }}grype${{ env.IMAGE_SEMVER_SUFFIX }}
 
       - name: grype / scan
+        if: env.WORKFLOW_GRYPE_SCAN == 'true'
         id: grype-scan
         uses: anchore/scan-action@abae793926ec39a78ab18002bc7fc45bbbd94342
         with:
