@@ -9,12 +9,10 @@ jobs:
     steps:
       - name: init / checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with:
-          ref: ${{ github.ref }}
 
       - name: tags
         run: |
-          git log ${{ github.ref }}..HEAD --oneline
+          git log ${{ github.ref_name }}..HEAD --oneline
 
       - name: build docker image
         uses: the-actions-org/workflow-dispatch@3133c5d135c7dbe4be4f9793872b6ef331b53bc7
