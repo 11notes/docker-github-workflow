@@ -17,7 +17,7 @@ jobs:
         run: |
           echo "current tag: ${{ github.ref_name }}"
           LOCAL_LAST_TAG=$(git describe --abbrev=0 --tags `git rev-list --tags --skip=1 --max-count=1`)
-          echo "last tag: ${LAST_TAG}"
+          echo "last tag: ${LOCAL_LAST_TAG}"
 
           LOCAL_COMMITS=$(git log v0.1.6..HEAD --oneline)
           echo "commits: ${LOCAL_COMMITS}"
@@ -28,4 +28,4 @@ jobs:
 
       - name: check output
         run: |
-          echo ${{ steps.commit.outputs.history }}
+          echo "${{ steps.commit.outputs.history }}"
