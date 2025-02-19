@@ -204,7 +204,7 @@ jobs:
         id: git-log
         run: |
           LOCAL_LAST_TAG=$(git describe --abbrev=0 --tags `git rev-list --tags --skip=1 --max-count=1`)
-          LOCAL_COMMITS=$(git log v0.1.6..HEAD --oneline)
+          LOCAL_COMMITS=$(git log ${LOCAL_LAST_TAG}..HEAD --oneline)
 
           EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
           echo "commits<<${EOF}" >> ${GITHUB_OUTPUT}
