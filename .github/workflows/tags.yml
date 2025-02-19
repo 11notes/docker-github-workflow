@@ -16,14 +16,11 @@ jobs:
         id: commit
         run: |
           echo "current tag: ${{ github.ref_name }}"
-          git rev-list --tags
-          git tag
-
-          git describe --abbrev=0 --tags `git rev-list --tags --skip=1 --max-count=1`
-          git describe --abbrev=0 --tags `git rev-list --tags --skip=2 --max-count=1`
-          git describe --abbrev=0 --tags `git rev-list --tags --skip=3 --max-count=1`
+          LOCAL_LAST_TAG=$(git describe --abbrev=0 --tags `git rev-list --tags --skip=1 --max-count=1`)
+          echo "last tag: ${LAST_TAG}"
 
           LOCAL_COMMITS=$(git log v0.1.6..HEAD --oneline)
+          echo "commits: ${LOCAL_COMMITS}"
           EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
           echo "history<<${EOF}" >> ${GITHUB_OUTPUT}
           echo "${LOCAL_COMMITS}" >> ${GITHUB_OUTPUT}
