@@ -20,11 +20,3 @@ ${{ content_parent }}
 ${{ content_built }}
 
 ${{ content_tips }}
-
-useless content
-
-feature content?
-
-maybe even an upgrade?
-
-misc with no type?
