@@ -9,12 +9,12 @@ jobs:
     steps:
       - name: init / checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: main
 
       - name: tags
         id: commit
         run: |
-          set -ex
-
           echo "current tag: ${{ github.ref_name }}"
           echo "tag -1: $(git describe --abbrev=0 --tags `git rev-list --tags --skip=1 --max-count=1`)"
           echo "tag -2: $(git describe --abbrev=0 --tags `git rev-list --tags --skip=2 --max-count=1`)"
