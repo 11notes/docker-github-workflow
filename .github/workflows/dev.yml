@@ -55,11 +55,6 @@ jobs:
         with:
           ref: master
 
-      - name: init / commit history
-        run: |
-          git describe --tags --abbrev=0
-          git log $(git describe --tags --abbrev=0)..HEAD --oneline
-
       - name: init / inputs to env
         if: github.event_name == 'workflow_dispatch'
         run: |
