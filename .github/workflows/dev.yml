@@ -57,9 +57,8 @@ jobs:
 
       - name: init / commit history
         run: |
-          git log $(git describe --tags --abbrev=0)..HEAD --oneline > ./commit.history
-          cat ./commit.history
-          ls -lah ./*
+          git describe --tags --abbrev=0
+          git log $(git describe --tags --abbrev=0)..HEAD --oneline
 
       - name: init / inputs to env
         if: github.event_name == 'workflow_dispatch'
