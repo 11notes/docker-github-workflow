@@ -30,6 +30,7 @@
 
 # :: Run
   USER root
+  RUN eleven printenv;
 
   # :: update image
     ARG APP_NO_CACHE
