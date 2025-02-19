@@ -12,20 +12,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: tags
-        id: commit
+      - name: git / log
+        id: git-log
         run: |
-          echo "current tag: ${{ github.ref_name }}"
           LOCAL_LAST_TAG=$(git describe --abbrev=0 --tags `git rev-list --tags --skip=1 --max-count=1`)
-          echo "last tag: ${LOCAL_LAST_TAG}"
-
           LOCAL_COMMITS=$(git log v0.1.6..HEAD --oneline)
-          echo "commits: ${LOCAL_COMMITS}"
+
           EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
-          echo "history<<${EOF}" >> ${GITHUB_OUTPUT}
+          echo "commits<<${EOF}" >> ${GITHUB_OUTPUT}
           echo "${LOCAL_COMMITS}" >> ${GITHUB_OUTPUT}
           echo "${EOF}" >> ${GITHUB_OUTPUT}
 
-      - name: check output
-        run: |
-          echo "${{ steps.commit.outputs.history }}"
+      - name: github / create RELEASE.md
+        uses: 11notes/action-docker-release@v1
+        with:
+          git_log: ${{ steps.git-log.outputs.commits }}
