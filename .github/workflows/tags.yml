@@ -6,7 +6,12 @@ on:
 jobs:
   docker:
     runs-on: ubuntu-latest
-    steps:   
+    steps:
+      - name: init / checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.ref }}
+
       - name: tags
         run: |
           git log ${{ github.ref }}..HEAD --oneline
