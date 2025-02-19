@@ -4,7 +4,7 @@ on:
     tags:
       - 'v*'
 jobs:
-  docker:
+  tags:
     runs-on: ubuntu-latest
     steps:
       - name: init / checkout
@@ -12,10 +12,12 @@ jobs:
 
       - name: tags
         run: |
-          LOCAL_LAST_COMMIT=$(git rev-list --tags --skip=1 --max-count=1)
+          LOCAL_LAST_COMMIT=$(git rev-list --tags --skip=2 --max-count=1)
           LOCAL_LAST_TAG=$(git describe --abbrev=0 --tags ${LOCAL_LAST_COMMIT})
+          LOCAL_LAST_TAG_ONELINE=$(git describe --abbrev=0 --tags `git rev-list --tags --skip=2 --max-count=1`)
           echo "last commit hash: ${LOCAL_LAST_COMMIT}"
           echo "last tag before ${{ github.ref_name }} was: ${LOCAL_LAST_TAG}"
+          echo "last tag before ${{ github.ref_name }} was oneline: ${LOCAL_LAST_TAG_ONELINE}"
 
           LOCAL_COMMITS=$(git log ${LOCAL_LAST_TAG}..HEAD --oneline)
           EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
