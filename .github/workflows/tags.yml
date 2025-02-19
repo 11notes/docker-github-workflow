@@ -14,11 +14,11 @@ jobs:
         run: |
           LOCAL_LAST_COMMIT=$(git rev-list --tags --skip=1 --max-count=1)
           LOCAL_LAST_TAG=$(git describe --abbrev=0 --tags ${LOCAL_LAST_COMMIT})
-          git log ${LOCAL_LAST_TAG}..HEAD --oneline
+          echo "last commit hash: ${LOCAL_LAST_COMMIT}"
+          echo "last tag before ${{ github.ref_name }} was: ${LOCAL_LAST_TAG}"
 
-      - name: build docker image
-        uses: the-actions-org/workflow-dispatch@3133c5d135c7dbe4be4f9793872b6ef331b53bc7
-        with:
-          workflow: dev.yml
-          wait-for-completion: false
-          token: "${{ secrets.REPOSITORY_TOKEN }}"
+          LOCAL_COMMITS=$(git log ${LOCAL_LAST_TAG}..HEAD --oneline)
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "commits<<${EOF}" >> ${GITHUB_OUTPUT}
+          echo "${LOCAL_COMMITS}" >> ${GITHUB_OUTPUT}
+          echo "${EOF}" >> ${GITHUB_OUTPUT}
