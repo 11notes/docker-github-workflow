@@ -12,7 +12,9 @@ jobs:
 
       - name: tags
         run: |
-          git log ${{ github.ref_name }}..HEAD --oneline
+          LOCAL_LAST_COMMIT=$(git rev-list --tags --skip=1 --max-count=1)
+          LOCAL_LAST_TAG=$(git describe --abbrev=0 --tags ${LOCAL_LAST_COMMIT})
+          git log ${LOCAL_LAST_TAG}..HEAD --oneline
 
       - name: build docker image
         uses: the-actions-org/workflow-dispatch@3133c5d135c7dbe4be4f9793872b6ef331b53bc7
