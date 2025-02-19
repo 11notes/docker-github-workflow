@@ -4,26 +4,12 @@ on:
     tags:
       - 'v*'
 jobs:
-  tags:
+  docker:
     runs-on: ubuntu-latest
-    steps:
-      - name: init / checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+    steps:   
+      - name: build docker image
+        uses: the-actions-org/workflow-dispatch@3133c5d135c7dbe4be4f9793872b6ef331b53bc7
         with:
-          fetch-depth: 0
-
-      - name: git / log
-        id: git-log
-        run: |
-          LOCAL_LAST_TAG=$(git describe --abbrev=0 --tags `git rev-list --tags --skip=1 --max-count=1`)
-          LOCAL_COMMITS=$(git log v0.1.6..HEAD --oneline)
-
-          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
-          echo "commits<<${EOF}" >> ${GITHUB_OUTPUT}
-          echo "${LOCAL_COMMITS}" >> ${GITHUB_OUTPUT}
-          echo "${EOF}" >> ${GITHUB_OUTPUT}
-
-      - name: github / create RELEASE.md
-        uses: 11notes/action-docker-release@v1
-        with:
-          git_log: ${{ steps.git-log.outputs.commits }}
+          workflow: dev.yml
+          token: "${{ secrets.REPOSITORY_TOKEN }}"
+          inputs: '{ "release":"true", "readme":"true" }'
