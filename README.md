@@ -56,6 +56,7 @@ USER docker
 | `DEBUG` | Will activate debug option for container image and app (if available) | |
 | `LD_PRELOAD` | Set mimalloc as default memalloc | /usr/lib/libmimalloc.so |
 | `MIMALLOC_LARGE_OS_PAGES` | Large memory pages by default | 1 |
+Some nonsense
 
 # SOURCE 💾
 * [11notes/github-workflow](https://github.com/11notes/docker-github-workflow)
@@ -70,13 +71,17 @@ USER docker
 * Use a reverse proxy like Traefik, Nginx, HAproxy to terminate TLS and to protect your endpoints
 * Use Let’s Encrypt DNS-01 challenge to obtain valid SSL certificates for your services
 
+
+
+or misc content
+
 # SECURITY VULNERABILITIES REPORT ⚡
 | Severity | Package | Version | Fix Version | Type | Location | Data Namespace | Link |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 4.7 (Medium) | linux-pam  | 1.6.1-r1  |   | apk  | /lib/apk/db/installed  | nvd:cpe  | [CVE-2024-10041](https://nvd.nist.gov/vuln/detail/CVE-2024-10041)  |
 
 
-
-
 # ElevenNotes™️
 This image is provided to you at your own risk. Always make backups before updating an image to a different version. Check the [releases](https://github.com/11notes/docker-github-workflow/releases) for breaking changes. If you have any problems with using this image simply raise an [issue](https://github.com/11notes/docker-github-workflow/issues), thanks. If you have a question or inputs please create a new [discussion](https://github.com/11notes/docker-github-workflow/discussions) instead of an issue. You can find all my other repositories on [github](https://github.com/11notes?tab=repositories).
+
+*created Mon, 24 Feb 2025 20:30:33 GMT*
