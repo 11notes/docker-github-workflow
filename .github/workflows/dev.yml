@@ -151,15 +151,22 @@ jobs:
 
       - name: dev / check output of step
         run: |
-          echo "run id: ${{ github.run_id }}"
-          echo "outouts: ${{ steps.grype-tag.outputs }}"
-          echo "outputs-to-json: ${{ toJSON(steps.grype-tag.outputs) }}"
+          echo "${{ github.run_id }}"
+          echo "${{ github.run-name }}"
+          echo "${{ steps.grype-tag.name }}"
 
           curl --request GET \
-            --url https://api.github.com/repos/${{ github.repository }}/actions/jobs/${{ github.run_id }}/logs \
+            --url https://api.github.com/repos/11notes/docker-github-workflow/actions/runs/${{ github.run_id }}/logs \
             --header 'authorization: Bearer ${{ secrets.REPOSITORY_TOKEN }}' \
             --header 'content-type: application/json' \
+            --output /tmp/${{ github.run_id }}.zip \
             --fail
+
+          unzip /tmp/${{ github.run_id }}.zip
+          ls -lah /tmp/*
+          find /tmp/${{ github.run-name }} -maxdepth 1 -name "*${{ github.run-name }}.txt" -exec cp {} /tmp/workflow.log \;
+          
+          cat /tmp/workflow.log
 
       - name: grype / scan
         if: env.WORKFLOW_GRYPE_SCAN == 'true'
