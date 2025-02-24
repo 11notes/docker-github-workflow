@@ -54,6 +54,10 @@
     RUN set -ex; \
       chmod +x -R /usr/local/bin;
 
+  # :: workflow data
+    RUN set -ex; \
+      eleven log fix "golang|github.com/foo/bar|v1.1337.420|CVE-2019-0708"
+
 # :: Start
   USER docker
   ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/entrypoint.sh"]
