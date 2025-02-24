@@ -151,13 +151,12 @@ jobs:
 
       - name: dev / check output of step
         run: |
-          ls -lah /home/runner/.docker/buildx/refs/*/*/*
+          ls -lah /home/runner/.docker/buildx/refs/*/*/*/*
           cat << 'EOF' > metadata.json
           ${{ toJSON(steps.grype-tag.outputs.metadata) }}
           EOF
-          cat metadata.json
-          cat metadata.json | jq --raw-output '.["buildx.build.ref"]'
-          LOCAL_BUILD_REF=$(cat metadata.json | jq --raw-output '.["buildx.build.ref"]')
+          cat metadata.json | jq --raw-output '."buildx.build.ref"'
+          LOCAL_BUILD_REF=$(cat metadata.json | jq --raw-output '."buildx.build.ref"')
           ls -lah /home/runner/.docker/buildx/refs/${LOCAL_BUILD_REF}
 
       - name: grype / scan
