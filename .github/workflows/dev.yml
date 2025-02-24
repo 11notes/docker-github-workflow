@@ -152,11 +152,8 @@ jobs:
 
       - name: docker / output build log
         if: steps.grype-tag.outcome == 'success'
-        run: |
-          cat << 'EOF' > buildx.log
-          $(docker buildx history logs)
-          EOF
-
+        run: |          
+          docker buildx history logs >& buildx.log
           cat buildx.log
 
       - name: grype / scan
