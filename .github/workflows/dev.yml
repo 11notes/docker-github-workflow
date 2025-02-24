@@ -153,11 +153,8 @@ jobs:
       - name: docker / output build log
         if: steps.grype-tag.outcome == 'success'
         run: |
-          echo "${{ steps.docker-buildx.outputs.name }}"
-          docker inspect --format='{{.LogPath}}' ${{ steps.docker-buildx.outputs.name }}
-          LOG_FILE=$(docker inspect --format='{{.LogPath}}' ${{ steps.docker-buildx.outputs.name }})
-          echo "${LOG_FILE}"
-          cat ${LOG_FILE}
+          docker buildx history logs
+          docker buildx history inspect --format json
 
       - name: grype / scan
         if: env.WORKFLOW_GRYPE_SCAN == 'true'
