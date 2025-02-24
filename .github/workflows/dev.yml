@@ -151,7 +151,10 @@ jobs:
 
       - name: dev / check output of step
         run: |
-          ls -lah /home/runner/.docker/buildx/refs/*
+          ls -lah /home/runner/.docker/buildx/refs/*/*
+          echo "${{ steps.grype-tag.outputs.metadata }}" > metadata.json
+          LOCAL_BUILD_REF=$(cat metadata.json | jq --raw-output '.["buildx.build.ref"]')
+          ls -lah /home/runner/.docker/buildx/refs/${LOCAL_BUILD_REF}
 
       - name: grype / scan
         if: env.WORKFLOW_GRYPE_SCAN == 'true'
