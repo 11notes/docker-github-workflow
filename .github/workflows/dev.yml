@@ -175,6 +175,7 @@ jobs:
           by-cve: true
 
       - name: grype / delete tag
+        continue-on-error: true
         if: steps.docker-build.outcome == 'success'
         run: |
           curl --request DELETE \
