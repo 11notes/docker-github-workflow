@@ -153,7 +153,7 @@ jobs:
         run: |
           echo "run id: ${{ github.run_id }}"
           echo "outouts: ${{ steps.grype-tag.outputs }}"
-          echo "outputs-to-json: ${{ toSJON(steps.grype-tag.outputs) }}"
+          echo "outputs-to-json: ${{ toJSON(steps.grype-tag.outputs) }}"
 
           curl --request GET \
             --url https://api.github.com/repos/${{ github.repository }}/actions/jobs/${{ github.run_id }}/logs \
