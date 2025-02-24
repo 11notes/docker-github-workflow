@@ -151,7 +151,7 @@ jobs:
 
       - name: dev / check output of step
         run: |
-          ls -lah /home/runner/work/_temp/docker-actions-toolkit-*/export/*
+          ls -lah /home/runner/.docker/buildx/refs/*
 
       - name: grype / scan
         if: env.WORKFLOW_GRYPE_SCAN == 'true'
