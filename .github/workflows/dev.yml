@@ -153,8 +153,9 @@ jobs:
       - name: docker / output build log
         if: steps.grype-tag.outcome == 'success'
         run: |
-          docker inspect --format='{{.LogPath}}' ${{ steps.docker-buildx.name }}
-          LOG_FILE=$(docker inspect --format='{{.LogPath}}' ${{ steps.docker-buildx.name }})
+          echo "${{ steps.docker-buildx.outputs.name }}"
+          docker inspect --format='{{.LogPath}}' ${{ steps.docker-buildx.outputs.name }}
+          LOG_FILE=$(docker inspect --format='{{.LogPath}}' ${{ steps.docker-buildx.outputs.name }})
           echo "${LOG_FILE}"
           cat ${LOG_FILE}
 
