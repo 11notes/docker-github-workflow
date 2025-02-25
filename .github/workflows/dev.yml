@@ -43,11 +43,13 @@ on:
 jobs:
   docker:
     runs-on: ubuntu-22.04
+
     services:
       registry:
         image: registry:2
         ports:
           - 5000:5000
+
     permissions:
       actions: read
       contents: write
@@ -118,6 +120,9 @@ jobs:
           echo "IMAGE_SEMVER_SUFFIX=${LOCAL_SEMVER_SUFFIX}" >> $GITHUB_ENV
           echo "IMAGE_VERSION_RC=${LOCAL_SEMVER_RC}" >> $GITHUB_ENV
 
+
+
+      # DOCKER    
       - name: docker / login to hub
         uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
         with:
@@ -158,15 +163,15 @@ jobs:
 
       - name: docker / output build log
         id: docker-buildx
-        if: steps.docker-build.outcome == 'success'
         run: |
           BUILDX_LOG=/tmp/buildx.log
           docker buildx history logs >& ${BUILDX_LOG}
           echo "log=${BUILDX_LOG}" >> $GITHUB_OUTPUT
+          cat ${BUILDX_LOG}
 
       - name: grype / scan
-        if: env.WORKFLOW_GRYPE_SCAN == 'true' && steps.docker-build.outcome == 'success'
-        id: grype-scan
+        if: env.WORKFLOW_GRYPE_SCAN == 'true'
+        id: grype
         uses: anchore/scan-action@abae793926ec39a78ab18002bc7fc45bbbd94342
         with:
           image: localhost:5000/${{ env.IMAGE }}:${{ env.IMAGE_SEMVER_PREFIX }}grype${{ env.IMAGE_SEMVER_SUFFIX }}
@@ -174,27 +179,15 @@ jobs:
           output-format: 'sarif'
           by-cve: true
 
-      - name: grype / delete tag
-        continue-on-error: true
-        if: steps.docker-build.outcome == 'success'
-        run: |
-          curl --request DELETE \
-            --url https://hub.docker.com/v2/repositories/${{ env.IMAGE }}/tags/${{ env.IMAGE_SEMVER_PREFIX }}grype${{ env.IMAGE_SEMVER_SUFFIX }}/ \
-            --header 'authorization: jwt ${{ secrets.DOCKER_TOKEN }}' \
-            --header 'content-type: application/json' \
-            --fail
-
       - name: codeql / upload
-        id: codeql-upload
-        if: steps.grype-scan.outcome == 'success'
+        if: steps.grype.outcome == 'success'
         uses: github/codeql-action/upload-sarif@48ab28a6f5dbc2a99bf1e0131198dd8f1df78169
         with:
-          sarif_file: ${{ steps.grype-scan.outputs.sarif }}
+          sarif_file: ${{ steps.grype.outputs.sarif }}
           wait-for-processing: false
           category: grype
 
       - name: docker / build & push
-        if: steps.docker-build.outcome == 'success'
         uses: docker/build-push-action@67a2d409c0a876cbe6b11854e3e25193efe4e62d
         with:
           context: .
@@ -219,6 +212,9 @@ jobs:
           tags: |
             ${{ env.IMAGE_TAGS }}
 
+
+
+      # RELEASE      
       - name: github / release / log
         id: git-log
         run: |
@@ -250,6 +246,9 @@ jobs:
           draft: false
           prerelease: false
 
+
+
+      # README
       - name: github / checkout master
         continue-on-error: true
         run: |         
@@ -261,7 +260,7 @@ jobs:
         id: github-readme
         uses: 11notes/action-docker-readme@v1
         with:
-          sarif_file: ${{ steps.grype-scan.outputs.sarif }}
+          sarif_file: ${{ steps.grype.outputs.sarif }}
           build_log_file: ${{ steps.docker-buildx.outputs.log }}
 
       - name: github / commit & push
@@ -275,6 +274,7 @@ jobs:
           git push
 
       - name: docker / push README.md to docker hub
+        continue-on-error: true
         if: hashFiles('README.md') != ''
         uses: christian-korneck/update-container-description-action@d36005551adeaba9698d8d67a296bd16fa91f8e8
         env:
@@ -285,7 +285,10 @@ jobs:
           provider: dockerhub
           short_description: ${{ env.json_readme_description }}
           readme_file: 'README.md'
+      
 
+
+      # REPOSITORY SETTINGS
       - name: github / update description and set repo defaults
         run: |
           curl --request PATCH \
