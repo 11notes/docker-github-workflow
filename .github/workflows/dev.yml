@@ -120,6 +120,9 @@ jobs:
           echo "IMAGE_SEMVER_SUFFIX=${LOCAL_SEMVER_SUFFIX}" >> $GITHUB_ENV
           echo "IMAGE_VERSION_RC=${LOCAL_SEMVER_RC}" >> $GITHUB_ENV
 
+          : # other misc environment variables
+          echo "GITHUB_SHA_SHORT=${LOCAL_SHA}" >> $GITHUB_ENV
+
 
 
       # DOCKER    
@@ -164,10 +167,9 @@ jobs:
       - name: docker / output build log
         id: docker-buildx
         run: |
-          BUILDX_LOG=/tmp/buildx.log
+          BUILDX_LOG=/tmp/buildx-${{ env.GITHUB_SHA_SHORT }}.log
           docker buildx history logs >& ${BUILDX_LOG}
           echo "log=${BUILDX_LOG}" >> $GITHUB_OUTPUT
-          cat ${BUILDX_LOG}
 
       - name: grype / scan
         if: env.WORKFLOW_GRYPE_SCAN == 'true'
@@ -261,7 +263,7 @@ jobs:
         uses: 11notes/action-docker-readme@v1
         with:
           sarif_file: ${{ steps.grype.outputs.sarif }}
-          build_log_file: ${{ steps.docker-buildx.outputs.log }}
+          build_output_metadata: ${{ steps.docker-build.outputs.metadata }}
 
       - name: github / commit & push
         continue-on-error: true
