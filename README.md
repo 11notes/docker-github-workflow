@@ -75,7 +75,12 @@ Some nonsense
 
 or misc content
 
+# SECURITY VULNERABILITIES REPORT ⚡
+| ID | Severity | Complexity | Vector | Source |
+| --- | --- | --- | --- | --- |
+| CVE-2024-10041 | medium | high | local | [CVE-2024-10041](https://nvd.nist.gov/vuln/detail/CVE-2024-10041) |
+
 # ElevenNotes™️
 This image is provided to you at your own risk. Always make backups before updating an image to a different version. Check the [releases](https://github.com/11notes/docker-github-workflow/releases) for breaking changes. If you have any problems with using this image simply raise an [issue](https://github.com/11notes/docker-github-workflow/issues), thanks. If you have a question or inputs please create a new [discussion](https://github.com/11notes/docker-github-workflow/discussions) instead of an issue. You can find all my other repositories on [github](https://github.com/11notes?tab=repositories).
 
-*created 25.2.2025, 10:06:52 (CET)*
+*created 25.2.2025, 10:12:42 (CET)*
