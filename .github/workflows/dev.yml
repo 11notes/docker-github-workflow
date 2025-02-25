@@ -70,7 +70,6 @@ jobs:
           ${{ toJSON(github.event.inputs) }}
           EOF
           for KEY in $(cat .inputs | jq --raw-output 'keys[]' | tr '\n' ' '); do echo "input_$(echo ${KEY} | tr '[:upper:]' '[:lower:]')=$(cat .inputs | jq --raw-output '.'${KEY}'')" >> $GITHUB_ENV; done
-          rm -rf .inputs
 
       - name: init / .json to env
         uses: rgarcia-phi/json-to-variables@9835d537368468c4e4de5254dc3efeadda183793
@@ -257,9 +256,9 @@ jobs:
           git checkout master
 
       - name: github / create README.md
+        id: github-readme
         continue-on-error: true
         if: env.WORKFLOW_GITHUB_README == 'true' && steps.docker-build.outcome == 'success'
-        id: github-readme
         uses: 11notes/action-docker-readme@v1
         with:
           sarif_file: ${{ steps.grype.outputs.sarif }}
