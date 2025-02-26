@@ -124,6 +124,14 @@ jobs:
 
 
 
+      # APPS
+      - name: node / set to LTS
+        uses: actions/setup-node@802632921f8532d2409ae6eac3313b6f81f11122
+        with:
+          node-version: 22
+
+
+
       # DOCKER    
       - name: docker / login to hub
         uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
