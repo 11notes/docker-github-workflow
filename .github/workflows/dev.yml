@@ -179,10 +179,13 @@ jobs:
           severity-cutoff: ${{ env.WORKFLOW_GRYPE_SEVERITY_CUTOFF }}
           output-format: 'sarif'
           by-cve: true
+          cache-db: true
 
       - name: DEBUG / where is db stored? Could passs it to readme action and avoid double download
         run: |
-          find / -name *vulnerability.db*
+          ls -lah ~/.cache/*/*/5/*
+          find ~ -name *.db
+          find /home -name *.db
           exit 1
 
       - name: codeql / upload
