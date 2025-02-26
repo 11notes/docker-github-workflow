@@ -182,7 +182,7 @@ jobs:
 
       - name: DEBUG / where is db stored? Could passs it to readme action and avoid double download
         run: |
-          find /tmp -name *vulnerability.db*
+          find / -name *vulnerability.db*
           exit 1
 
       - name: codeql / upload
