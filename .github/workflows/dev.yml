@@ -121,7 +121,7 @@ jobs:
 
           : # other misc environment variables
           echo "GITHUB_SHA_SHORT=${LOCAL_SHA}" >> $GITHUB_ENV
-          
+
 
 
       # DOCKER    
@@ -264,6 +264,7 @@ jobs:
         with:
           sarif_file: ${{ steps.grype.outputs.sarif }}
           build_output_metadata: ${{ steps.docker-build.outputs.metadata }}
+          development: true
 
       - name: github / commit & push
         continue-on-error: true
