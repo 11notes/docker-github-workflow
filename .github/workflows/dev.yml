@@ -121,15 +121,7 @@ jobs:
 
           : # other misc environment variables
           echo "GITHUB_SHA_SHORT=${LOCAL_SHA}" >> $GITHUB_ENV
-
-
-
-      # APPS
-      - name: node / set to LTS
-        uses: actions/setup-node@802632921f8532d2409ae6eac3313b6f81f11122
-        with:
-          node-version: 22
-
+          
 
 
       # DOCKER    
