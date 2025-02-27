@@ -9,9 +9,6 @@ ${{ content_build }}
 ${{ content_defaults }}
 
 ${{ content_environment }}
-| `LD_PRELOAD` | Set mimalloc as default memalloc | /usr/lib/libmimalloc.so |
-| `MIMALLOC_LARGE_OS_PAGES` | Large memory pages by default | 1 |
-Some nonsense
 
 ${{ content_source }}
 
@@ -20,7 +17,3 @@ ${{ content_parent }}
 ${{ content_built }}
 
 ${{ content_tips }}
-
-
-
-or misc content

@@ -30,19 +30,6 @@
 
 # :: Run
   USER root
-  RUN eleven printenv;
-
-  # :: update image
-    ARG APP_NO_CACHE
-    RUN set -ex; \
-      apk --no-cache --update --repository https://dl-cdn.alpinelinux.org/alpine/edge/main add \
-        ca-certificates \
-        curl \
-        tzdata; \
-      apk --no-cache --update --repository https://dl-cdn.alpinelinux.org/alpine/edge/community add \
-        shadow \
-        tini; \
-      apk --no-cache --update upgrade;
 
   # :: create user
     RUN set -ex; \
@@ -53,10 +40,6 @@
     COPY ./rootfs /
     RUN set -ex; \
       chmod +x -R /usr/local/bin;
-
-  # :: workflow data
-    RUN set -ex; \
-      eleven log fix "golang|github.com/foo/bar|v1.1337.420|CVE-2019-0708"
 
 # :: Start
   USER docker

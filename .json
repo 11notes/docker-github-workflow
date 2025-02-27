@@ -1,12 +1,12 @@
 {
   "image":"11notes/github-workflow",
-  "name":"github-workflow",
+  "name":"alpine",
   "root":"/",
   
   "semver":{
-    "version":"3.21.2",
-    "stable":"3.21.2",
-    "latest":"3.21.2"
+    "version":"3.21.3",
+    "stable":"3.21.3",
+    "latest":"3.21.3"
   },
 
   "readme":{
@@ -15,10 +15,8 @@
       "image":"scratch"
     },
     "built":{
-      "mimalloc":"https://github.com/microsoft/mimalloc"
-    },
-    "grype":{
-      "severity":1
+      "mimalloc":"https://github.com/11notes/docker-mimalloc",
+      "alpine":"https://alpinelinux.org"
     }
   }
 }
