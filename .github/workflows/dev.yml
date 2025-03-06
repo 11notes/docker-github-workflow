@@ -62,19 +62,12 @@ jobs:
         with:
           ref: ${{ github.ref_name }}
           fetch-depth: 0
-
-      - name: init / inputs to env
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          cat << 'EOF' > .inputs
-          ${{ toJSON(github.event.inputs) }}
-          EOF
-          for KEY in $(cat .inputs | jq --raw-output 'keys[]' | tr '\n' ' '); do echo "input_$(echo ${KEY} | tr '[:upper:]' '[:lower:]')=$(cat .inputs | jq --raw-output '.'${KEY}'')" >> $GITHUB_ENV; done
-
-      - name: init / .json to env
-        uses: rgarcia-phi/json-to-variables@9835d537368468c4e4de5254dc3efeadda183793
+          
+      - name: init / inputs to environment
+        uses: 11notes/action-inputs-to-env@v1
         with:
-          filename: '.json'
+          json: '.json'
+          input: ${{ toJSON(github.event.inputs) }}
 
       - name: init / setup environment
         run: |
@@ -88,6 +81,7 @@ jobs:
           echo "WORKFLOW_GITHUB_RELEASE=${input_release:-true}" >> $GITHUB_ENV;
           echo "WORKFLOW_GITHUB_README=${input_readme:-true}" >> $GITHUB_ENV;
           echo "WORKFLOW_GRYPE_SCAN=${json_grype_scan:-true}" >> $GITHUB_ENV;
+          echo "WORKFLOW_GRYPE_FAIL=${json_grype_fail:-true}" >> $GITHUB_ENV;
           echo "WORKFLOW_GRYPE_SEVERITY_CUTOFF=${json_grype_severity:-high}" >> $GITHUB_ENV;
 
           : # create tags for semver, stable and other shenanigans
@@ -163,21 +157,26 @@ jobs:
           tags: |
             localhost:5000/${{ env.IMAGE }}:${{ env.IMAGE_SEMVER_PREFIX }}grype${{ env.IMAGE_SEMVER_SUFFIX }}
 
-      - name: docker / output build log
-        id: docker-buildx
-        run: |
-          BUILDX_LOG=/tmp/buildx-${{ env.GITHUB_SHA_SHORT }}.log
-          docker buildx history logs >& ${BUILDX_LOG}
-          echo "log=${BUILDX_LOG}" >> $GITHUB_OUTPUT
-
       - name: grype / scan
         if: env.WORKFLOW_GRYPE_SCAN == 'true'
         id: grype
         uses: anchore/scan-action@abae793926ec39a78ab18002bc7fc45bbbd94342
         with:
           image: localhost:5000/${{ env.IMAGE }}:${{ env.IMAGE_SEMVER_PREFIX }}grype${{ env.IMAGE_SEMVER_SUFFIX }}
+          fail-build: ${{ env.WORKFLOW_GRYPE_FAIL }}
           severity-cutoff: ${{ env.WORKFLOW_GRYPE_SEVERITY_CUTOFF }}
           output-format: 'sarif'
+          by-cve: true
+          cache-db: true
+
+      - name: grype / fail
+        if: failure() || steps.grype.outcome == 'failure'
+        uses: anchore/scan-action@abae793926ec39a78ab18002bc7fc45bbbd94342
+        with:
+          image: localhost:5000/${{ env.IMAGE }}:${{ env.IMAGE_SEMVER_PREFIX }}grype${{ env.IMAGE_SEMVER_SUFFIX }}
+          fail-build: false
+          severity-cutoff: ${{ env.WORKFLOW_GRYPE_SEVERITY_CUTOFF }}
+          output-format: 'table'
           by-cve: true
           cache-db: true
 
@@ -218,6 +217,7 @@ jobs:
 
       # RELEASE      
       - name: github / release / log
+        continue-on-error: true
         id: git-log
         run: |
           LOCAL_LAST_TAG=$(git describe --abbrev=0 --tags `git rev-list --tags --skip=1 --max-count=1`)
@@ -230,7 +230,7 @@ jobs:
           echo "${EOF}" >> ${GITHUB_OUTPUT}
 
       - name: github / release / markdown
-        if: env.WORKFLOW_GITHUB_RELEASE == 'true'
+        if: env.WORKFLOW_GITHUB_RELEASE == 'true'  && steps.git-log.outcome == 'success'
         id: git-release
         uses: 11notes/action-docker-release@v1
         with:
@@ -264,7 +264,6 @@ jobs:
         with:
           sarif_file: ${{ steps.grype.outputs.sarif }}
           build_output_metadata: ${{ steps.docker-build.outputs.metadata }}
-          development: true
 
       - name: github / commit & push
         continue-on-error: true
