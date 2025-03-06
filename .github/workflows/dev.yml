@@ -70,51 +70,13 @@ jobs:
           input: ${{ toJSON(github.event.inputs) }}
 
       - name: init / setup environment
-        run: |
-          : # set image
-          LOCAL_IMAGE=${json_image}
-          if [ ! -z ${input_image} ]; then LOCAL_IMAGE=${input_image}; fi
-          echo "IMAGE=${LOCAL_IMAGE}" >> $GITHUB_ENV
-
-          : # set defaults
-          echo "IMAGE_ARCH=${json_arch:-linux/amd64,linux/arm64}" >> $GITHUB_ENV
-          echo "WORKFLOW_GITHUB_RELEASE=${input_release:-true}" >> $GITHUB_ENV;
-          echo "WORKFLOW_GITHUB_README=${input_readme:-true}" >> $GITHUB_ENV;
-          echo "WORKFLOW_GRYPE_SCAN=${json_grype_scan:-true}" >> $GITHUB_ENV;
-          echo "WORKFLOW_GRYPE_FAIL=${json_grype_fail:-true}" >> $GITHUB_ENV;
-          echo "WORKFLOW_GRYPE_SEVERITY_CUTOFF=${json_grype_severity:-high}" >> $GITHUB_ENV;
-
-          : # create tags for semver, stable and other shenanigans
-          LOCAL_SHA=$(git rev-parse --short HEAD)
-          LOCAL_SEMVER_MAJOR=$(awk -F. '{ print $1 }' <<< ${json_semver_version})
-          LOCAL_SEMVER_MINOR=$(awk -F. '{ print $2 }' <<< ${json_semver_version})
-          LOCAL_SEMVER_PATCH=$(awk -F. '{ print $3 }' <<< ${json_semver_version})
-          LOCAL_SEMVER_PREFIX=""
-          LOCAL_SEMVER_SUFFIX=""
-          LOCAL_SEMVER_RC=""
-          LOCAL_TAGS="${LOCAL_IMAGE}:${LOCAL_SHA}"
-          if [ ! -z ${input_semverprefix} ]; then LOCAL_SEMVER_PREFIX="${input_semverprefix}-"; fi
-          if [ ! -z ${input_semversuffix} ]; then LOCAL_SEMVER_SUFFIX="-${input_semversuffix}"; fi
-          if [ ! -z ${json_semver_rc} ]; then LOCAL_SEMVER_RC="${json_semver_rc}"; fi
-          if [ ! -z ${LOCAL_SEMVER_MAJOR} ]; then LOCAL_TAGS="${LOCAL_TAGS},${LOCAL_IMAGE}:${LOCAL_SEMVER_PREFIX}${LOCAL_SEMVER_MAJOR}${LOCAL_SEMVER_SUFFIX}"; fi
-          if [ ! -z ${LOCAL_SEMVER_MINOR} ]; then LOCAL_TAGS="${LOCAL_TAGS},${LOCAL_IMAGE}:${LOCAL_SEMVER_PREFIX}${LOCAL_SEMVER_MAJOR}.${LOCAL_SEMVER_MINOR}${LOCAL_SEMVER_SUFFIX}"; fi
-          if [ ! -z ${LOCAL_SEMVER_PATCH} ]; then LOCAL_TAGS="${LOCAL_TAGS},${LOCAL_IMAGE}:${LOCAL_SEMVER_PREFIX}${LOCAL_SEMVER_MAJOR}.${LOCAL_SEMVER_MINOR}.${LOCAL_SEMVER_PATCH}${LOCAL_SEMVER_SUFFIX}"; fi
-          if echo "${LOCAL_TAGS}" | grep -q "${json_semver_stable}" ; then LOCAL_TAGS="${LOCAL_TAGS},${LOCAL_IMAGE}:${LOCAL_SEMVER_PREFIX}stable${LOCAL_SEMVER_SUFFIX}"; fi
-          if echo "${LOCAL_TAGS}" | grep -q "${json_semver_latest}" ; then LOCAL_TAGS="${LOCAL_TAGS},${LOCAL_IMAGE}:${LOCAL_SEMVER_PREFIX}latest${LOCAL_SEMVER_SUFFIX}"; fi
-          if [ ! -z ${json_semver_tags} ]; then SPECIAL_LOCAL_TAGS=$(echo ${json_semver_tags} | sed 's/,/ /g'); for LOCAL_TAG in ${json_semver_tags}; do LOCAL_TAGS="${LOCAL_TAGS},${LOCAL_IMAGE}:${LOCAL_SEMVER_PREFIX}${LOCAL_TAG}${LOCAL_SEMVER_SUFFIX}"; done; fi
-          echo "IMAGE_TAGS=${LOCAL_TAGS}" >> $GITHUB_ENV
-
-          : # if for whatever reason UID/GID must be changed at build time
-          if [ ! -z ${input_uid} ]; then echo "IMAGE_UID=${input_uid}" >> $GITHUB_ENV; else echo "IMAGE_UID=${json_uid:-1000}" >> $GITHUB_ENV; fi
-          if [ ! -z ${input_gid} ]; then echo "IMAGE_GID=${input_gid}" >> $GITHUB_ENV; else echo "IMAGE_GID=${json_gid:-1000}" >> $GITHUB_ENV; fi
-
-          : # set rc, prefix or suffix globally for semver and version
-          echo "IMAGE_SEMVER_PREFIX=${LOCAL_SEMVER_PREFIX}" >> $GITHUB_ENV
-          echo "IMAGE_SEMVER_SUFFIX=${LOCAL_SEMVER_SUFFIX}" >> $GITHUB_ENV
-          echo "IMAGE_VERSION_RC=${LOCAL_SEMVER_RC}" >> $GITHUB_ENV
-
-          : # other misc environment variables
-          echo "GITHUB_SHA_SHORT=${LOCAL_SHA}" >> $GITHUB_ENV
+        uses: actions/github-script@62c3794a3eb6788d9a2a72b219504732c0c9a298
+        with:
+          script: |
+            const json = `${{ toJSON(github.event.inputs) }}`;
+            console.log(json);
+            console.log(github.event.inputs);
+  
 
 
 
