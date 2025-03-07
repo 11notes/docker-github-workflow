@@ -70,13 +70,116 @@ jobs:
           input: ${{ toJSON(github.event.inputs) }}
 
       - name: init / setup environment
+        run: |
+          : # set image
+          LOCAL_IMAGE=${json_image}
+          if [ ! -z ${input_image} ]; then LOCAL_IMAGE=${input_image}; fi
+          echo "IMAGE=${LOCAL_IMAGE}" >> $GITHUB_ENV
+
+          : # set defaults
+          echo "IMAGE_ARCH=${json_arch:-linux/amd64,linux/arm64}" >> $GITHUB_ENV
+          echo "WORKFLOW_GITHUB_RELEASE=${input_release:-true}" >> $GITHUB_ENV;
+          echo "WORKFLOW_GITHUB_README=${input_readme:-true}" >> $GITHUB_ENV;
+          echo "WORKFLOW_GRYPE_FAIL=${json_grype_fail:-true}" >> $GITHUB_ENV;
+          echo "WORKFLOW_GRYPE_SEVERITY_CUTOFF=${json_grype_severity:-high}" >> $GITHUB_ENV;
+
+          : # create tags for semver, stable and other shenanigans
+          LOCAL_SHA=$(git rev-parse --short HEAD)
+          LOCAL_SEMVER_MAJOR=$(awk -F. '{ print $1 }' <<< ${json_semver_version})
+          LOCAL_SEMVER_MINOR=$(awk -F. '{ print $2 }' <<< ${json_semver_version})
+          LOCAL_SEMVER_PATCH=$(awk -F. '{ print $3 }' <<< ${json_semver_version})
+          LOCAL_SEMVER_PREFIX=""
+          LOCAL_SEMVER_SUFFIX=""
+          LOCAL_SEMVER_RC=""
+          LOCAL_TAGS="${LOCAL_IMAGE}:${LOCAL_SHA}"
+          if [ ! -z ${input_semverprefix} ]; then LOCAL_SEMVER_PREFIX="${input_semverprefix}-"; fi
+          if [ ! -z ${input_semversuffix} ]; then LOCAL_SEMVER_SUFFIX="-${input_semversuffix}"; fi
+          if [ ! -z ${json_semver_rc} ]; then LOCAL_SEMVER_RC="${json_semver_rc}"; fi
+          if [ ! -z ${LOCAL_SEMVER_MAJOR} ]; then LOCAL_TAGS="${LOCAL_TAGS},${LOCAL_IMAGE}:${LOCAL_SEMVER_PREFIX}${LOCAL_SEMVER_MAJOR}${LOCAL_SEMVER_SUFFIX}"; fi
+          if [ ! -z ${LOCAL_SEMVER_MINOR} ]; then LOCAL_TAGS="${LOCAL_TAGS},${LOCAL_IMAGE}:${LOCAL_SEMVER_PREFIX}${LOCAL_SEMVER_MAJOR}.${LOCAL_SEMVER_MINOR}${LOCAL_SEMVER_SUFFIX}"; fi
+          if [ ! -z ${LOCAL_SEMVER_PATCH} ]; then LOCAL_TAGS="${LOCAL_TAGS},${LOCAL_IMAGE}:${LOCAL_SEMVER_PREFIX}${LOCAL_SEMVER_MAJOR}.${LOCAL_SEMVER_MINOR}.${LOCAL_SEMVER_PATCH}${LOCAL_SEMVER_SUFFIX}"; fi
+          if echo "${LOCAL_TAGS}" | grep -q "${json_semver_stable}" ; then LOCAL_TAGS="${LOCAL_TAGS},${LOCAL_IMAGE}:${LOCAL_SEMVER_PREFIX}stable${LOCAL_SEMVER_SUFFIX}"; fi
+          if echo "${LOCAL_TAGS}" | grep -q "${json_semver_latest}" ; then LOCAL_TAGS="${LOCAL_TAGS},${LOCAL_IMAGE}:${LOCAL_SEMVER_PREFIX}latest${LOCAL_SEMVER_SUFFIX}"; fi
+          if [ ! -z ${json_semver_tags} ]; then SPECIAL_LOCAL_TAGS=$(echo ${json_semver_tags} | sed 's/,/ /g'); for LOCAL_TAG in ${json_semver_tags}; do LOCAL_TAGS="${LOCAL_TAGS},${LOCAL_IMAGE}:${LOCAL_SEMVER_PREFIX}${LOCAL_TAG}${LOCAL_SEMVER_SUFFIX}"; done; fi
+          echo "IMAGE_TAGS=${LOCAL_TAGS}" >> $GITHUB_ENV
+
+          : # if for whatever reason UID/GID must be changed at build time
+          if [ ! -z ${input_uid} ]; then echo "IMAGE_UID=${input_uid}" >> $GITHUB_ENV; else echo "IMAGE_UID=${json_uid:-1000}" >> $GITHUB_ENV; fi
+          if [ ! -z ${input_gid} ]; then echo "IMAGE_GID=${input_gid}" >> $GITHUB_ENV; else echo "IMAGE_GID=${json_gid:-1000}" >> $GITHUB_ENV; fi
+
+          : # set rc, prefix or suffix globally for semver and version
+          echo "IMAGE_SEMVER_PREFIX=${LOCAL_SEMVER_PREFIX}" >> $GITHUB_ENV
+          echo "IMAGE_SEMVER_SUFFIX=${LOCAL_SEMVER_SUFFIX}" >> $GITHUB_ENV
+          echo "IMAGE_VERSION_RC=${LOCAL_SEMVER_RC}" >> $GITHUB_ENV
+
+          : # other misc environment variables
+          echo "GITHUB_SHA_SHORT=${LOCAL_SHA}" >> $GITHUB_ENV
+
+      - name: init / setup environment
         uses: actions/github-script@62c3794a3eb6788d9a2a72b219504732c0c9a298
         with:
           script: |
-            const json = `${{ toJSON(github.event.inputs) }}`;
-            console.log(json);
-            console.log(github.event.inputs);
-  
+            const { existsSync, readFileSync } = require('node:fs');
+            const { resolve } = require('node:path');
+            const inputs = `${{ toJSON(github.event.inputs) }}`;
+            const opt = {input:{}, dot:{}};
+
+            try{
+              if(inputs.length > 0){
+                opt.input = JSON.parse(inputs);
+              }
+            }catch(e){
+              core.warning('could not parse github.event.inputs');
+            }
+
+            try{
+              const path = resolve('.json');
+              if(existsSync(path)){
+                try{
+                  opt.dot = JSON.parse(readFileSync(path).toString());
+                }catch(e){
+                  throw new Error('could not parse .json');
+                }
+              }else{
+                throw new Error('.json does not exist');
+              }
+            }catch(e){
+              core.setFailed(e);
+            }
+
+            const docker = {
+              image:{
+                name:(opt.input?.image || opt.dot.image),
+                arch:(opt.dot.arch || 'linux/amd64,linux/arm64'),
+                prefix:((opt.input?.semverprefix) ? `${opt.input?.semverprefix}-` : ''),
+                suffix:((opt.input?.semversuffix) ? `-${opt.input?.semversuffix}` : ''),
+              },
+              tags:[],
+            };
+
+            // setup tags
+              const semver = opt.dot.semver.version.split('.');
+              docker.tags.push(`${context.sha}`);
+              if(Array.isArray(semver)){
+                if(semver.length >= 0) docker.tags.push(`${semver[0]}`);
+                if(semver.length >= 1) docker.tags.push(`${semver[0]}.${semver[1]}`);
+                if(semver.length >= 2) docker.tags.push(`${semver[0]}.${semver[1]}.${semver[2]}`);
+              }
+              if(opt.dot.semver?.stable && new RegExp(opt.dot.semver.stable, 'ig').test(docker.tags.join(','))) docker.tags.push('stable');
+              if(opt.dot.semver?.latest && new RegExp(opt.dot.semver.latest, 'ig').test(docker.tags.join(','))) docker.tags.push('latest');
+
+              for(let i=0; i<docker.tags.length; i++){
+                docker.tags[i] = `${docker.image.name}:${docker.image.prefix}${docker.tags[i]}${docker.image.suffix}`;
+              }
+
+            core.info(JSON.stringify(docker));
+
+            core.exportVariable('DOCKER_IMAGE_NAME', docker.image.name);
+            core.exportVariable('DOCKER_IMAGE_ARCH', docker.image.arch);
+            core.exportVariable('WORKFLOW_CREATE_RELEASE', (opt.input?.release || true));
+            core.exportVariable('WORKFLOW_CREATE_README', (opt.input?.readme || true));
+            core.exportVariable('WORKFLOW_GRYPE_FAIL_ON_SEVERITY', (opt.json?.grpye?.fail || true));
+            core.exportVariable('WORKFLOW_GRYPE_SEVERITY_CUTOFF', (opt.json?.grpye?.severity || 'high'));
 
 
 
@@ -120,7 +223,6 @@ jobs:
             localhost:5000/${{ env.IMAGE }}:${{ env.IMAGE_SEMVER_PREFIX }}grype${{ env.IMAGE_SEMVER_SUFFIX }}
 
       - name: grype / scan
-        if: env.WORKFLOW_GRYPE_SCAN == 'true'
         id: grype
         uses: anchore/scan-action@abae793926ec39a78ab18002bc7fc45bbbd94342
         with:
