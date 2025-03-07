@@ -62,58 +62,6 @@ jobs:
         with:
           ref: ${{ github.ref_name }}
           fetch-depth: 0
-          
-      - name: init / inputs to environment
-        uses: 11notes/action-inputs-to-env@v1
-        with:
-          json: '.json'
-          input: ${{ toJSON(github.event.inputs) }}
-
-      - name: init / setup environment
-        run: |
-          : # set image
-          LOCAL_IMAGE=${json_image}
-          if [ ! -z ${input_image} ]; then LOCAL_IMAGE=${input_image}; fi
-          echo "IMAGE=${LOCAL_IMAGE}" >> $GITHUB_ENV
-
-          : # set defaults
-          echo "IMAGE_ARCH=${json_arch:-linux/amd64,linux/arm64}" >> $GITHUB_ENV
-          echo "WORKFLOW_GITHUB_RELEASE=${input_release:-true}" >> $GITHUB_ENV;
-          echo "WORKFLOW_GITHUB_README=${input_readme:-true}" >> $GITHUB_ENV;
-          echo "WORKFLOW_GRYPE_FAIL=${json_grype_fail:-true}" >> $GITHUB_ENV;
-          echo "WORKFLOW_GRYPE_SEVERITY_CUTOFF=${json_grype_severity:-high}" >> $GITHUB_ENV;
-
-          : # create tags for semver, stable and other shenanigans
-          LOCAL_SHA=$(git rev-parse --short HEAD)
-          LOCAL_SEMVER_MAJOR=$(awk -F. '{ print $1 }' <<< ${json_semver_version})
-          LOCAL_SEMVER_MINOR=$(awk -F. '{ print $2 }' <<< ${json_semver_version})
-          LOCAL_SEMVER_PATCH=$(awk -F. '{ print $3 }' <<< ${json_semver_version})
-          LOCAL_SEMVER_PREFIX=""
-          LOCAL_SEMVER_SUFFIX=""
-          LOCAL_SEMVER_RC=""
-          LOCAL_TAGS="${LOCAL_IMAGE}:${LOCAL_SHA}"
-          if [ ! -z ${input_semverprefix} ]; then LOCAL_SEMVER_PREFIX="${input_semverprefix}-"; fi
-          if [ ! -z ${input_semversuffix} ]; then LOCAL_SEMVER_SUFFIX="-${input_semversuffix}"; fi
-          if [ ! -z ${json_semver_rc} ]; then LOCAL_SEMVER_RC="${json_semver_rc}"; fi
-          if [ ! -z ${LOCAL_SEMVER_MAJOR} ]; then LOCAL_TAGS="${LOCAL_TAGS},${LOCAL_IMAGE}:${LOCAL_SEMVER_PREFIX}${LOCAL_SEMVER_MAJOR}${LOCAL_SEMVER_SUFFIX}"; fi
-          if [ ! -z ${LOCAL_SEMVER_MINOR} ]; then LOCAL_TAGS="${LOCAL_TAGS},${LOCAL_IMAGE}:${LOCAL_SEMVER_PREFIX}${LOCAL_SEMVER_MAJOR}.${LOCAL_SEMVER_MINOR}${LOCAL_SEMVER_SUFFIX}"; fi
-          if [ ! -z ${LOCAL_SEMVER_PATCH} ]; then LOCAL_TAGS="${LOCAL_TAGS},${LOCAL_IMAGE}:${LOCAL_SEMVER_PREFIX}${LOCAL_SEMVER_MAJOR}.${LOCAL_SEMVER_MINOR}.${LOCAL_SEMVER_PATCH}${LOCAL_SEMVER_SUFFIX}"; fi
-          if echo "${LOCAL_TAGS}" | grep -q "${json_semver_stable}" ; then LOCAL_TAGS="${LOCAL_TAGS},${LOCAL_IMAGE}:${LOCAL_SEMVER_PREFIX}stable${LOCAL_SEMVER_SUFFIX}"; fi
-          if echo "${LOCAL_TAGS}" | grep -q "${json_semver_latest}" ; then LOCAL_TAGS="${LOCAL_TAGS},${LOCAL_IMAGE}:${LOCAL_SEMVER_PREFIX}latest${LOCAL_SEMVER_SUFFIX}"; fi
-          if [ ! -z ${json_semver_tags} ]; then SPECIAL_LOCAL_TAGS=$(echo ${json_semver_tags} | sed 's/,/ /g'); for LOCAL_TAG in ${json_semver_tags}; do LOCAL_TAGS="${LOCAL_TAGS},${LOCAL_IMAGE}:${LOCAL_SEMVER_PREFIX}${LOCAL_TAG}${LOCAL_SEMVER_SUFFIX}"; done; fi
-          echo "IMAGE_TAGS=${LOCAL_TAGS}" >> $GITHUB_ENV
-
-          : # if for whatever reason UID/GID must be changed at build time
-          if [ ! -z ${input_uid} ]; then echo "IMAGE_UID=${input_uid}" >> $GITHUB_ENV; else echo "IMAGE_UID=${json_uid:-1000}" >> $GITHUB_ENV; fi
-          if [ ! -z ${input_gid} ]; then echo "IMAGE_GID=${input_gid}" >> $GITHUB_ENV; else echo "IMAGE_GID=${json_gid:-1000}" >> $GITHUB_ENV; fi
-
-          : # set rc, prefix or suffix globally for semver and version
-          echo "IMAGE_SEMVER_PREFIX=${LOCAL_SEMVER_PREFIX}" >> $GITHUB_ENV
-          echo "IMAGE_SEMVER_SUFFIX=${LOCAL_SEMVER_SUFFIX}" >> $GITHUB_ENV
-          echo "IMAGE_VERSION_RC=${LOCAL_SEMVER_RC}" >> $GITHUB_ENV
-
-          : # other misc environment variables
-          echo "GITHUB_SHA_SHORT=${LOCAL_SHA}" >> $GITHUB_ENV
 
       - name: init / setup environment
         uses: actions/github-script@62c3794a3eb6788d9a2a72b219504732c0c9a298
@@ -122,7 +70,7 @@ jobs:
             const { existsSync, readFileSync } = require('node:fs');
             const { resolve } = require('node:path');
             const inputs = `${{ toJSON(github.event.inputs) }}`;
-            const opt = {input:{}, dot:{}};
+            const opt = {input:{}, dot:{}};            
 
             try{
               if(inputs.length > 0){
@@ -153,33 +101,51 @@ jobs:
                 arch:(opt.dot.arch || 'linux/amd64,linux/arm64'),
                 prefix:((opt.input?.semverprefix) ? `${opt.input?.semverprefix}-` : ''),
                 suffix:((opt.input?.semversuffix) ? `-${opt.input?.semversuffix}` : ''),
+                description:(opt.dot?.readme?.description || ''),
+                tags:[],
               },
-              tags:[],
+              app:{
+                name:opt.dot.name,
+                version:opt.dot.semver.version,
+                root:opt.dot.root,
+                UID:(opt.input?.uid || 1000),
+                GID:(opt.input?.gid || 1000),
+              }
             };
 
             // setup tags
               const semver = opt.dot.semver.version.split('.');
-              docker.tags.push(`${context.sha}`);
+              docker.image.tags.push(`${context.sha.substring(0,7)}`);
               if(Array.isArray(semver)){
-                if(semver.length >= 0) docker.tags.push(`${semver[0]}`);
-                if(semver.length >= 1) docker.tags.push(`${semver[0]}.${semver[1]}`);
-                if(semver.length >= 2) docker.tags.push(`${semver[0]}.${semver[1]}.${semver[2]}`);
+                if(semver.length >= 0) docker.image.tags.push(`${semver[0]}`);
+                if(semver.length >= 1) docker.image.tags.push(`${semver[0]}.${semver[1]}`);
+                if(semver.length >= 2) docker.image.tags.push(`${semver[0]}.${semver[1]}.${semver[2]}`);
               }
-              if(opt.dot.semver?.stable && new RegExp(opt.dot.semver.stable, 'ig').test(docker.tags.join(','))) docker.tags.push('stable');
-              if(opt.dot.semver?.latest && new RegExp(opt.dot.semver.latest, 'ig').test(docker.tags.join(','))) docker.tags.push('latest');
+              if(opt.dot.semver?.stable && new RegExp(opt.dot.semver.stable, 'ig').test(docker.image.tags.join(','))) docker.image.tags.push('stable');
+              if(opt.dot.semver?.latest && new RegExp(opt.dot.semver.latest, 'ig').test(docker.image.tags.join(','))) docker.image.tags.push('latest');
 
-              for(let i=0; i<docker.tags.length; i++){
-                docker.tags[i] = `${docker.image.name}:${docker.image.prefix}${docker.tags[i]}${docker.image.suffix}`;
+              for(let i=0; i<docker.image.tags.length; i++){
+                docker.image.tags[i] = `${docker.image.name}:${docker.image.prefix}${docker.image.tags[i]}${docker.image.suffix}`;
               }
 
-            core.info(JSON.stringify(docker));
+            // export to environment
+              core.exportVariable('DOCKER_IMAGE_NAME', docker.image.name);
+              core.exportVariable('DOCKER_IMAGE_ARCH', docker.image.arch);
+              core.exportVariable('DOCKER_IMAGE_TAGS', docker.image.tags.join(','));
+              core.exportVariable('DOCKER_IMAGE_PREFIX', docker.image.prefix);
+              core.exportVariable('DOCKER_IMAGE_SUFFIX', docker.image.suffix);
+              core.exportVariable('DOCKER_IMAGE_DESCRIPTION', docker.image.description);
 
-            core.exportVariable('DOCKER_IMAGE_NAME', docker.image.name);
-            core.exportVariable('DOCKER_IMAGE_ARCH', docker.image.arch);
-            core.exportVariable('WORKFLOW_CREATE_RELEASE', (opt.input?.release || true));
-            core.exportVariable('WORKFLOW_CREATE_README', (opt.input?.readme || true));
-            core.exportVariable('WORKFLOW_GRYPE_FAIL_ON_SEVERITY', (opt.json?.grpye?.fail || true));
-            core.exportVariable('WORKFLOW_GRYPE_SEVERITY_CUTOFF', (opt.json?.grpye?.severity || 'high'));
+              core.exportVariable('DOCKER_APP_NAME', docker.app.name);
+              core.exportVariable('DOCKER_APP_ROOT', docker.app.root);
+              core.exportVariable('DOCKER_APP_VERSION', docker.app.version);
+              core.exportVariable('DOCKER_APP_UID', docker.app.UID);
+              core.exportVariable('DOCKER_APP_GID', docker.app.GID);
+
+              core.exportVariable('WORKFLOW_CREATE_RELEASE', (opt.input?.release || true));
+              core.exportVariable('WORKFLOW_CREATE_README', (opt.input?.readme || true));
+              core.exportVariable('WORKFLOW_GRYPE_FAIL_ON_SEVERITY', (opt.json?.grpye?.fail || true));
+              core.exportVariable('WORKFLOW_GRYPE_SEVERITY_CUTOFF', (opt.json?.grpye?.severity || 'high'));
 
 
 
@@ -205,29 +171,28 @@ jobs:
           context: .
           file: arch.dockerfile
           push: true
-          platforms: ${{ env.IMAGE_ARCH }}
-          cache-from: type=registry,ref=${{ env.IMAGE }}:${{ env.IMAGE_SEMVER_PREFIX }}buildcache${{ env.IMAGE_SEMVER_SUFFIX }}
-          cache-to: type=registry,ref=localhost:5000/${{ env.IMAGE }}:${{ env.IMAGE_SEMVER_PREFIX }}buildcache${{ env.IMAGE_SEMVER_SUFFIX }},mode=max,compression=zstd,force-compression=true
+          platforms: ${{ env.DOCKER_IMAGE_ARCH }}
+          cache-from: type=registry,ref=${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_PREFIX }}buildcache${{ env.DOCKER_IMAGE_SUFFIX }}
+          cache-to: type=registry,ref=localhost:5000/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_PREFIX }}buildcache${{ env.DOCKER_IMAGE_SUFFIX }},mode=max,compression=zstd,force-compression=true
           build-args: |
-            APP_IMAGE=${{ env.IMAGE }}
-            APP_NAME=${{ env.json_name }}
-            APP_VERSION=${{ env.json_semver_version }}
-            APP_ROOT=${{ env.json_root }}
-            APP_UID=${{ env.IMAGE_UID }}
-            APP_GID=${{ env.IMAGE_GID }}
-            APP_VERSION_PREFIX=${{ env.IMAGE_SEMVER_PREFIX }}
-            APP_VERSION_SUFFIX=${{ env.IMAGE_SEMVER_SUFFIX }}
-            APP_VERSION_RC=${{ env.IMAGE_VERSION_RC }}
+            APP_IMAGE=${{ env.DOCKER_IMAGE_NAME }}
+            APP_NAME=${{ env.DOCKER_APP_NAME }}
+            APP_VERSION=${{ env.DOCKER_APP_VERSION }}
+            APP_ROOT=${{ env.DOCKER_APP_ROOT }}
+            APP_UID=${{ env.DOCKER_APP_UID }}
+            APP_GID=${{ env.DOCKER_APP_GID }}
+            APP_VERSION_PREFIX=${{ env.DOCKER_IMAGE_PREFIX }}
+            APP_VERSION_SUFFIX=${{ env.DOCKER_IMAGE_SUFFIX }}
             APP_NO_CACHE=$(date +%s)
           tags: |
-            localhost:5000/${{ env.IMAGE }}:${{ env.IMAGE_SEMVER_PREFIX }}grype${{ env.IMAGE_SEMVER_SUFFIX }}
+            localhost:5000/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_PREFIX }}grype${{ env.DOCKER_IMAGE_SUFFIX }}
 
       - name: grype / scan
         id: grype
         uses: anchore/scan-action@abae793926ec39a78ab18002bc7fc45bbbd94342
         with:
-          image: localhost:5000/${{ env.IMAGE }}:${{ env.IMAGE_SEMVER_PREFIX }}grype${{ env.IMAGE_SEMVER_SUFFIX }}
-          fail-build: ${{ env.WORKFLOW_GRYPE_FAIL }}
+          image: localhost:5000/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_PREFIX }}grype${{ env.DOCKER_IMAGE_SUFFIX }}
+          fail-build: ${{ env.WORKFLOW_GRYPE_FAIL_ON_SEVERITY }}
           severity-cutoff: ${{ env.WORKFLOW_GRYPE_SEVERITY_CUTOFF }}
           output-format: 'sarif'
           by-cve: true
@@ -237,7 +202,7 @@ jobs:
         if: failure() || steps.grype.outcome == 'failure'
         uses: anchore/scan-action@abae793926ec39a78ab18002bc7fc45bbbd94342
         with:
-          image: localhost:5000/${{ env.IMAGE }}:${{ env.IMAGE_SEMVER_PREFIX }}grype${{ env.IMAGE_SEMVER_SUFFIX }}
+          image: localhost:5000/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_PREFIX }}grype${{ env.DOCKER_IMAGE_SUFFIX }}
           fail-build: false
           severity-cutoff: ${{ env.WORKFLOW_GRYPE_SEVERITY_CUTOFF }}
           output-format: 'table'
@@ -260,22 +225,21 @@ jobs:
           push: true
           sbom: true
           provenance: mode=max
-          platforms: ${{ env.IMAGE_ARCH }}
-          cache-from: type=registry,ref=localhost:5000/${{ env.IMAGE }}:${{ env.IMAGE_SEMVER_PREFIX }}buildcache${{ env.IMAGE_SEMVER_SUFFIX }}
-          cache-to: type=registry,ref=${{ env.IMAGE }}:${{ env.IMAGE_SEMVER_PREFIX }}buildcache${{ env.IMAGE_SEMVER_SUFFIX }},mode=max,compression=zstd,force-compression=true
+          platforms: ${{ env.DOCKER_IMAGE_ARCH }}
+          cache-from: type=registry,ref=localhost:5000/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_PREFIX }}buildcache${{ env.DOCKER_IMAGE_SUFFIX }}
+          cache-to: type=registry,ref=${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_PREFIX }}buildcache${{ env.DOCKER_IMAGE_SUFFIX }},mode=max,compression=zstd,force-compression=true
           build-args: |
-            APP_IMAGE=${{ env.IMAGE }}
-            APP_NAME=${{ env.json_name }}
-            APP_VERSION=${{ env.json_semver_version }}
-            APP_ROOT=${{ env.json_root }}
-            APP_UID=${{ env.IMAGE_UID }}
-            APP_GID=${{ env.IMAGE_GID }}
-            APP_VERSION_PREFIX=${{ env.IMAGE_SEMVER_PREFIX }}
-            APP_VERSION_SUFFIX=${{ env.IMAGE_SEMVER_SUFFIX }}
-            APP_VERSION_RC=${{ env.IMAGE_VERSION_RC }}
+            APP_IMAGE=${{ env.DOCKER_IMAGE_NAME }}
+            APP_NAME=${{ env.DOCKER_APP_NAME }}
+            APP_VERSION=${{ env.DOCKER_APP_VERSION }}
+            APP_ROOT=${{ env.DOCKER_APP_ROOT }}
+            APP_UID=${{ env.DOCKER_APP_UID }}
+            APP_GID=${{ env.DOCKER_APP_GID }}
+            APP_VERSION_PREFIX=${{ env.DOCKER_IMAGE_PREFIX }}
+            APP_VERSION_SUFFIX=${{ env.DOCKER_IMAGE_SUFFIX }}
             APP_NO_CACHE=$(date +%s)
           tags: |
-            ${{ env.IMAGE_TAGS }}
+            ${{ env.DOCKER_IMAGE_NAME_TAGS }}
 
 
 
@@ -294,14 +258,14 @@ jobs:
           echo "${EOF}" >> ${GITHUB_OUTPUT}
 
       - name: github / release / markdown
-        if: env.WORKFLOW_GITHUB_RELEASE == 'true'  && steps.git-log.outcome == 'success'
+        if: env.WORKFLOW_CREATE_RELEASE == 'true'  && steps.git-log.outcome == 'success'
         id: git-release
         uses: 11notes/action-docker-release@v1
         with:
           git_log: ${{ steps.git-log.outputs.commits }}
 
       - name: github / release / create
-        if: env.WORKFLOW_GITHUB_RELEASE == 'true' && steps.git-release.outcome == 'success'
+        if: env.WORKFLOW_CREATE_RELEASE == 'true' && steps.git-release.outcome == 'success'
         uses: actions/create-release@4c11c9fe1dcd9636620a16455165783b20fc7ea0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -323,7 +287,7 @@ jobs:
       - name: github / create README.md
         id: github-readme
         continue-on-error: true
-        if: env.WORKFLOW_GITHUB_README == 'true' && steps.docker-build.outcome == 'success'
+        if: env.WORKFLOW_CREATE_README == 'true' && steps.docker-build.outcome == 'success'
         uses: 11notes/action-docker-readme@v1
         with:
           sarif_file: ${{ steps.grype.outputs.sarif }}
@@ -347,9 +311,9 @@ jobs:
           DOCKER_USER: 11notes
           DOCKER_PASS: ${{ secrets.DOCKER_TOKEN }}
         with:
-          destination_container_repo: ${{ env.IMAGE }}
+          destination_container_repo: ${{ env.DOCKER_IMAGE_NAME }}
           provider: dockerhub
-          short_description: ${{ env.json_readme_description }}
+          short_description: ${{ env.DOCKER_IMAGE_DESCRIPTION }}
           readme_file: 'README.md'
       
 
@@ -362,7 +326,7 @@ jobs:
             --header 'authorization: Bearer ${{ secrets.REPOSITORY_TOKEN }}' \
             --header 'content-type: application/json' \
             --data '{
-              "description":"${{ env.json_readme_description }}",
+              "description":"${{ env.DOCKER_IMAGE_DESCRIPTION }}",
               "homepage":"",
               "has_issues":true,
               "has_discussions":true,
