@@ -117,6 +117,9 @@ jobs:
               }
             };
 
+            docker.cache.name = `${docker.image.name}:${docker.image.prefix}buildcache${docker.image.suffix}`;
+            docker.cache.grype = `${docker.cache.registry}${docker.image.name}:${docker.image.prefix}grype${docker.image.suffix}`;
+
             // setup tags
               const semver = opt.dot.semver.version.split('.');
               docker.image.tags.push(`${context.sha.substring(0,7)}`);
@@ -140,6 +143,8 @@ jobs:
 
             // export to environment
               core.exportVariable('DOCKER_CACHE_REGISTRY', docker.cache.registry);
+              core.exportVariable('DOCKER_CACHE_TAG', docker.cache.name);
+              core.exportVariable('DOCKER_CACHE_GRYPE', docker.cache.grype);
 
               core.exportVariable('DOCKER_IMAGE_NAME', docker.image.name);
               core.exportVariable('DOCKER_IMAGE_ARCH', docker.image.arch);
@@ -148,12 +153,6 @@ jobs:
               core.exportVariable('DOCKER_IMAGE_SUFFIX', docker.image.suffix);
               core.exportVariable('DOCKER_IMAGE_DESCRIPTION', docker.image.description);
               core.exportVariable('DOCKER_IMAGE_ARGUMENTS', arguments.join("\r\n"));
-
-              core.exportVariable('DOCKER_APP_NAME', docker.app.name);
-              core.exportVariable('DOCKER_APP_ROOT', docker.app.root);
-              core.exportVariable('DOCKER_APP_VERSION', docker.app.version);
-              core.exportVariable('DOCKER_APP_UID', docker.app.UID);
-              core.exportVariable('DOCKER_APP_GID', docker.app.GID);
 
               core.exportVariable('WORKFLOW_CREATE_RELEASE', (opt.input?.release || true));
               core.exportVariable('WORKFLOW_CREATE_README', (opt.input?.readme || true));
@@ -185,18 +184,18 @@ jobs:
           file: arch.dockerfile
           push: true
           platforms: ${{ env.DOCKER_IMAGE_ARCH }}
-          cache-from: type=registry,ref=${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_PREFIX }}buildcache${{ env.DOCKER_IMAGE_SUFFIX }}
-          cache-to: type=registry,ref=${{ env.DOCKER_CACHE_REGISTRY }}${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_PREFIX }}buildcache${{ env.DOCKER_IMAGE_SUFFIX }},mode=max,compression=zstd,force-compression=true
+          cache-from: type=registry,ref=${{ env.DOCKER_CACHE_TAG }}
+          cache-to: type=registry,ref=${{ env.DOCKER_CACHE_REGISTRY }}${{ env.DOCKER_CACHE_TAG }},mode=max,compression=zstd,force-compression=true
           build-args: |
             ${{ env.DOCKER_IMAGE_ARGUMENTS }}
           tags: |
-            ${{ env.DOCKER_CACHE_REGISTRY }}${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_PREFIX }}grype${{ env.DOCKER_IMAGE_SUFFIX }}
+            ${{ env.DOCKER_CACHE_GRYPE }}
 
       - name: grype / scan
         id: grype
         uses: anchore/scan-action@abae793926ec39a78ab18002bc7fc45bbbd94342
         with:
-          image: ${{ env.DOCKER_CACHE_REGISTRY }}${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_PREFIX }}grype${{ env.DOCKER_IMAGE_SUFFIX }}
+          image: ${{ env.DOCKER_CACHE_GRYPE }}
           fail-build: ${{ env.WORKFLOW_GRYPE_FAIL_ON_SEVERITY }}
           severity-cutoff: ${{ env.WORKFLOW_GRYPE_SEVERITY_CUTOFF }}
           output-format: 'sarif'
@@ -207,7 +206,7 @@ jobs:
         if: failure() || steps.grype.outcome == 'failure'
         uses: anchore/scan-action@abae793926ec39a78ab18002bc7fc45bbbd94342
         with:
-          image: ${{ env.DOCKER_CACHE_REGISTRY }}${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_PREFIX }}grype${{ env.DOCKER_IMAGE_SUFFIX }}
+          image: ${{ env.DOCKER_CACHE_GRYPE }}
           fail-build: false
           severity-cutoff: ${{ env.WORKFLOW_GRYPE_SEVERITY_CUTOFF }}
           output-format: 'table'
@@ -223,18 +222,10 @@ jobs:
           sbom: true
           provenance: mode=max
           platforms: ${{ env.DOCKER_IMAGE_ARCH }}
-          cache-from: type=registry,ref=${{ env.DOCKER_CACHE_REGISTRY }}${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_PREFIX }}buildcache${{ env.DOCKER_IMAGE_SUFFIX }}
-          cache-to: type=registry,ref=${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_PREFIX }}buildcache${{ env.DOCKER_IMAGE_SUFFIX }},mode=max,compression=zstd,force-compression=true
+          cache-from: type=registry,ref=${{ env.DOCKER_CACHE_REGISTRY }}${{ env.DOCKER_CACHE_TAG }}
+          cache-to: type=registry,ref=${{ env.DOCKER_CACHE_TAG }},mode=max,compression=zstd,force-compression=true
           build-args: |
-            APP_IMAGE=${{ env.DOCKER_IMAGE_NAME }}
-            APP_NAME=${{ env.DOCKER_APP_NAME }}
-            APP_VERSION=${{ env.DOCKER_APP_VERSION }}
-            APP_ROOT=${{ env.DOCKER_APP_ROOT }}
-            APP_UID=${{ env.DOCKER_APP_UID }}
-            APP_GID=${{ env.DOCKER_APP_GID }}
-            APP_VERSION_PREFIX=${{ env.DOCKER_IMAGE_PREFIX }}
-            APP_VERSION_SUFFIX=${{ env.DOCKER_IMAGE_SUFFIX }}
-            APP_NO_CACHE=$(date +%s)
+            ${{ env.DOCKER_IMAGE_ARGUMENTS }}
           tags: |
             ${{ env.DOCKER_IMAGE_TAGS }}
 
