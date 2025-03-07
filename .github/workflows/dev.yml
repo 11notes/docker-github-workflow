@@ -239,7 +239,7 @@ jobs:
             APP_VERSION_SUFFIX=${{ env.DOCKER_IMAGE_SUFFIX }}
             APP_NO_CACHE=$(date +%s)
           tags: |
-            ${{ env.DOCKER_IMAGE_NAME_TAGS }}
+            ${{ env.DOCKER_IMAGE_TAGS }}
 
 
 
