@@ -5,13 +5,6 @@
   ARG APP_UID=1000 \
       APP_GID=1000
 
-# :: FOREIGN IMAGES
-  FROM 11notes/util AS util
-  FROM 11notes/distroless AS distroless
-  FROM 11notes/distroless:curl AS distroless-curl
-  FROM 11notes/distroless:tini AS distroless-tini
-  FROM 11notes/distroless:upx AS distroless-upx
-
 
 # ╔═════════════════════════════════════════════════════╗
 # ║                       BUILD                         ║
@@ -32,18 +25,14 @@
 
   ADD rootfs-${APP_VERSION}-${TARGETARCH}${TARGETVARIANT}.tar.gz /
 
-  COPY --from=util / /
-  COPY ./rootfs /
-  COPY --from=distroless / /
-  COPY --from=distroless-curl / /
-  COPY --from=distroless-tini / /
-  COPY --from=distroless-upx / /
-
   RUN set -ex; \
+    apt update -y; \
+    apt install -y \
+      upx; \
     chmod +x -R /usr/local/bin;
 
   RUN set -ex; \
-    find / -type f -executable -exec eleven shrink {} ';';
+    find / -type f -executable -exec upx -q --no-backup -9 --best --lzma {} ';';
 
   RUN set -ex; \
     for FOLDER in /tmp/* /root/*; do \
@@ -70,7 +59,7 @@
         APP_UID \
         APP_GID \
         APP_NO_CACHE
-        
+
   # :: app specific environment
     ENV DEBIAN_FRONTEND=noninteractive
 
@@ -79,4 +68,3 @@
 
 # :: EXECUTE
   USER ${APP_UID}:${APP_GID}
-  ENTRYPOINT ["/usr/local/bin/tini", "--", "/usr/local/bin/entrypoint.sh"]
