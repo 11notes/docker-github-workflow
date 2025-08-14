@@ -1,0 +1,133 @@
+name: split
+on:
+  workflow_dispatch:
+
+jobs:
+  docker:
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [amd64, arm64]
+        include:
+          - platform: amd64
+            runner: ubuntu-24.04
+          - platform: arm64
+            runner: ubuntu-24.04-arm
+
+    services:
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
+
+    permissions:
+      actions: read
+      contents: write
+      packages: write
+
+    steps:   
+      - name: init / checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: docker / login to hub
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772
+        with:
+          username: 11notes
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: docker / setup buildx
+        if: env.WORKFLOW_BUILD == 'true'
+        uses: docker/setup-buildx-action@6524bf65af31da8d45b59e8c27de4bd072b392f5
+        with:
+          driver-opts: network=host
+      
+      - name: docker / build image locally
+        uses: docker/build-push-action@67a2d409c0a876cbe6b11854e3e25193efe4e62d
+        with:
+          context: .
+          file: arch.dockerfile
+          push: true
+          platforms: linux/${{ matrix.platform }}
+          cache-from: type=registry,ref=11notes/github-workflow-${{ matrix.platform }}:buildcache
+          cache-to: type=registry,ref=localhost:5000/11notes/github-workflow-${{ matrix.platform }},mode=max,compression=zstd,force-compression=true
+          build-args: |
+            APP_VERSION=3.21.3
+          tags: |
+            11notes/github-workflow:latest
+
+      - name: docker / build image from cache and push to registries
+        id: push
+        uses: docker/build-push-action@67a2d409c0a876cbe6b11854e3e25193efe4e62d
+        with:
+          context: .
+          file: arch.dockerfile
+          push: true
+          sbom: true
+          provenance: mode=max
+          platforms: linux/${{ matrix.platform }}
+          cache-from: type=registry,ref=localhost:5000/11notes/github-workflow-${{ matrix.platform }}
+          cache-to: type=registry,ref=11notes/github-workflow-${{ matrix.platform }}:buildcache,mode=max,compression=zstd,force-compression=true
+          build-args: |
+            APP_VERSION=3.21.3
+          tags: |
+            11notes/github-workflow:latest
+
+      - name: Generate Artifact Attestation
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: 11notes/github-workflow
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+      - name: Export digest
+        run: |
+          mkdir -p ${{ runner.temp }}/digests
+          digest="${{ steps.push.outputs.digest }}"
+          touch "${{ runner.temp }}/digests/${digest#sha256:}"
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-linux-${{ matrix.platform }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge_platform_containers:
+    name: Merge Platform Containers
+    runs-on: ubuntu-24.04
+    needs: docker
+    steps:
+      - name: Download Digests
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-*
+          merge-multiple: true
+      - name: docker / login to hub
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772
+        with:
+          username: 11notes
+          password: ${{ secrets.DOCKER_TOKEN }}
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Get Docker Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: 11notes/github-workflow
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+      - name: Create manifest list and push
+        working-directory: ${{ runner.temp }}/digests
+        run: |
+          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf '11notes/github-workflow@sha256:%s ' *)
+      - name: Inspect Image
+        run: |
+          docker buildx imagetools inspect 11notes/github-workflow:${{ steps.meta.outputs.version }}

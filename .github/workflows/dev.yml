@@ -143,14 +143,12 @@ jobs:
 
             // export to environment
               core.exportVariable('DOCKER_CACHE_REGISTRY', docker.cache.registry);
-              core.exportVariable('DOCKER_CACHE_TAG', docker.cache.name);
+              core.exportVariable('DOCKER_CACHE_NAME', docker.cache.name);
               core.exportVariable('DOCKER_CACHE_GRYPE', docker.cache.grype);
 
               core.exportVariable('DOCKER_IMAGE_NAME', docker.image.name);
               core.exportVariable('DOCKER_IMAGE_ARCH', docker.image.arch);
               core.exportVariable('DOCKER_IMAGE_TAGS', docker.image.tags.join(','));
-              core.exportVariable('DOCKER_IMAGE_PREFIX', docker.image.prefix);
-              core.exportVariable('DOCKER_IMAGE_SUFFIX', docker.image.suffix);
               core.exportVariable('DOCKER_IMAGE_DESCRIPTION', docker.image.description);
               core.exportVariable('DOCKER_IMAGE_ARGUMENTS', arguments.join("\r\n"));
 
@@ -184,8 +182,8 @@ jobs:
           file: arch.dockerfile
           push: true
           platforms: ${{ env.DOCKER_IMAGE_ARCH }}
-          cache-from: type=registry,ref=${{ env.DOCKER_CACHE_TAG }}
-          cache-to: type=registry,ref=${{ env.DOCKER_CACHE_REGISTRY }}${{ env.DOCKER_CACHE_TAG }},mode=max,compression=zstd,force-compression=true
+          cache-from: type=registry,ref=${{ env.DOCKER_CACHE_NAME }}
+          cache-to: type=registry,ref=${{ env.DOCKER_CACHE_REGISTRY }}${{ env.DOCKER_CACHE_NAME }},mode=max,compression=zstd,force-compression=true
           build-args: |
             ${{ env.DOCKER_IMAGE_ARGUMENTS }}
           tags: |
@@ -222,8 +220,8 @@ jobs:
           sbom: true
           provenance: mode=max
           platforms: ${{ env.DOCKER_IMAGE_ARCH }}
-          cache-from: type=registry,ref=${{ env.DOCKER_CACHE_REGISTRY }}${{ env.DOCKER_CACHE_TAG }}
-          cache-to: type=registry,ref=${{ env.DOCKER_CACHE_TAG }},mode=max,compression=zstd,force-compression=true
+          cache-from: type=registry,ref=${{ env.DOCKER_CACHE_REGISTRY }}${{ env.DOCKER_CACHE_NAME }}
+          cache-to: type=registry,ref=${{ env.DOCKER_CACHE_NAME }},mode=max,compression=zstd,force-compression=true
           build-args: |
             ${{ env.DOCKER_IMAGE_ARGUMENTS }}
           tags: |
