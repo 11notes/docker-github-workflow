@@ -119,7 +119,7 @@ jobs:
         with:
           images: 11notes/github-workflow
           tags: |
-            11notes/github-workflow:latest
+            latest
       - name: Create manifest list and push
         working-directory: ${{ runner.temp }}/digests
         run: |
