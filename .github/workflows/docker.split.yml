@@ -79,7 +79,7 @@ jobs:
       - name: Generate Artifact Attestation
         uses: actions/attest-build-provenance@v2
         with:
-          subject-name: 11notes/github-workflow
+          subject-name: docker.io/11notes/github-workflow
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
       - name: Export digest
