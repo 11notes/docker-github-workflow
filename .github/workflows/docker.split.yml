@@ -1,12 +1,6 @@
 name: split
 on:
   workflow_dispatch:
-    inputs:
-      platforms:
-        description: 'platforms to build for'
-        type: string
-        required: false
-        default: '[amd64, arm64, armv7]'
 
 jobs:
   docker:
@@ -14,7 +8,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: ${{ inputs.platforms }}
+        platform: [amd64, arm64, armv7]
         include:
           - platform: amd64
             runner: ubuntu-24.04
@@ -93,7 +87,7 @@ jobs:
         with:
           subject-name: docker.io/11notes/github-workflow
           subject-digest: ${{ steps.push.outputs.digest }}
-          push-to-registry: true
+          #push-to-registry: true
       - name: Export digest
         run: |
           mkdir -p ${{ runner.temp }}/digests
