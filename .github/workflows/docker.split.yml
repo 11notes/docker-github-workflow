@@ -22,9 +22,10 @@ jobs:
           - 5000:5000
 
     permissions:
-      actions: read
-      contents: write
+      contents: read
       packages: write
+      attestations: write
+      id-token: write
 
     steps:   
       - name: init / checkout
