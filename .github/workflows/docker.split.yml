@@ -127,6 +127,12 @@ jobs:
       matrix:
         registry: [docker.io, ghcr.io, quay.io]
 
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+
     needs: docker
 
     steps:
