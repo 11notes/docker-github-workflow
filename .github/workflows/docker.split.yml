@@ -52,8 +52,8 @@ jobs:
           file: arch.dockerfile
           push: true
           platforms: linux/${{ matrix.platform }}
-          cache-from: type=registry,ref=11notes/github-workflow-${{ matrix.platform }}:buildcache
-          cache-to: type=registry,ref=localhost:5000/11notes/github-workflow-${{ matrix.platform }},mode=max,compression=zstd,force-compression=true
+          cache-from: type=registry,ref=11notes/github-workflow:buildcache-${{ matrix.platform }}
+          cache-to: type=registry,ref=localhost:5000/11notes/github-workflow:buildcache-${{ matrix.platform }},mode=max,compression=zstd,force-compression=true
           build-args: |
             APP_VERSION=3.21.3
           tags: |
@@ -69,8 +69,8 @@ jobs:
           sbom: true
           provenance: mode=max
           platforms: linux/${{ matrix.platform }}
-          cache-from: type=registry,ref=localhost:5000/11notes/github-workflow-${{ matrix.platform }}
-          cache-to: type=registry,ref=11notes/github-workflow-${{ matrix.platform }}:buildcache,mode=max,compression=zstd,force-compression=true
+          cache-from: type=registry,ref=localhost:5000/11notes/github-workflow:buildcache-${{ matrix.platform }}
+          cache-to: type=registry,ref=11notes/github-workflow:buildcache-${{ matrix.platform }},mode=max,compression=zstd,force-compression=true
           build-args: |
             APP_VERSION=3.21.3
           tags: |
@@ -119,10 +119,7 @@ jobs:
         with:
           images: 11notes/github-workflow
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
+            11notes/github-workflow:latest
       - name: Create manifest list and push
         working-directory: ${{ runner.temp }}/digests
         run: |
