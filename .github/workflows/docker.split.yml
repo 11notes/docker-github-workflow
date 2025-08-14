@@ -55,7 +55,7 @@ jobs:
           cache-from: type=registry,ref=11notes/github-workflow:buildcache-${{ matrix.platform }}
           cache-to: type=registry,ref=localhost:5000/11notes/github-workflow:buildcache-${{ matrix.platform }},mode=max,compression=zstd,force-compression=true
           build-args: |
-            APP_VERSION=3.21.3
+            APP_VERSION=13
           tags: |
             11notes/github-workflow:latest
 
@@ -72,7 +72,7 @@ jobs:
           cache-from: type=registry,ref=localhost:5000/11notes/github-workflow:buildcache-${{ matrix.platform }}
           cache-to: type=registry,ref=11notes/github-workflow:buildcache-${{ matrix.platform }},mode=max,compression=zstd,force-compression=true
           build-args: |
-            APP_VERSION=3.21.3
+            APP_VERSION=13
           tags: |
             11notes/github-workflow:latest
 
