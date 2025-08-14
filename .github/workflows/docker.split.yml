@@ -42,6 +42,20 @@ jobs:
           username: 11notes
           password: ${{ secrets.DOCKER_TOKEN }}
 
+      - name: github / login to ghcr
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772
+        with:
+          registry: ghcr.io
+          username: 11notes
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: quay / login to quay
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772
+        with:
+          registry: quay.io
+          username: 11notes+github
+          password: ${{ secrets.QUAY_TOKEN }}
+
       - name: docker / setup qemu
         if: ${{ matrix.platform }} == 'armv7'
         uses: docker/setup-qemu-action@05340d1c670183e7caabdb33ae9f1c80fae3b0c2
