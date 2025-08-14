@@ -106,18 +106,6 @@ jobs:
           subject-name: docker.io/11notes/github-workflow
           subject-digest: ${{ steps.push.outputs.digest }}
           #push-to-registry: true
-      - name: Generate Artifact Attestation
-        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
-        with:
-          subject-name: ghcr.io/11notes/github-workflow
-          subject-digest: ${{ steps.push.outputs.digest }}
-          #push-to-registry: true
-      - name: Generate Artifact Attestation
-        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
-        with:
-          subject-name: quay.io/11notes/github-workflow
-          subject-digest: ${{ steps.push.outputs.digest }}
-          #push-to-registry: true
       - name: Export digest
         run: |
           mkdir -p ${{ runner.temp }}/digests
@@ -186,7 +174,7 @@ jobs:
         working-directory: ${{ runner.temp }}/digests
         run: |
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf '${{ matrix.registry }}/11notes/github-workflow@sha256:%s ' *)
+            $(printf 'docker.io/11notes/github-workflow@sha256:%s ' *)
       - name: Inspect Image
         run: |
           docker buildx imagetools inspect ${{ matrix.registry }}/11notes/github-workflow:${{ steps.meta.outputs.version }}
