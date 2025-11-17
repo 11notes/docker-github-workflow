@@ -1,5 +1,4 @@
-name: org.readme
-
+name: cibuildwheel
 on:
   workflow_dispatch:
 
