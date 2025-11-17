@@ -14,7 +14,13 @@ jobs:
       - uses: actions/checkout@v5
         with:
           repository: pyca/bcrypt
+          path: './project'
           ref: 5.0.0
+          submodules: true
+
+      - name: test
+        run: |
+          ls -lah ${PWD}
 
       - name: Set up QEMU
         if: runner.os == 'Linux' && runner.arch == 'X64'
@@ -24,8 +30,6 @@ jobs:
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v3.3.0
-        with:
-          package-dir: .
         env:
           CIBW_ARCHS_LINUX: ${{ runner.arch == 'X64' && 'auto ppc64le s390x' || 'auto' }}
           CIBW_BUILD: cp313-musllinux*
