@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          repository: https://github.com/pyca/bcrypt.git
+          repository: pyca/bcrypt.git
           ref: 5.0.0
 
       - name: Set up QEMU
